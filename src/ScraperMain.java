@@ -10,7 +10,7 @@
 
 
 import java.util.List;
-public class ScaperMain {
+public class ScraperMain {
     public static void main(String[] args) {
         ApartmentScraper scraper = new StudentRentalsScraper(); // Instantiate scraper for StudentRentalsLaCrosse
         List<Apartment> apartments = scraper.scrape();			// Fetch and parse apartment listings
