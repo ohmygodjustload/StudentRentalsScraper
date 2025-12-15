@@ -7,6 +7,9 @@
  * 
  * Date Last Modified: 08/13/2025
  */
+package geocoding;
+
+import models.Apartment;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

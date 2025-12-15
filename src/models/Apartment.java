@@ -1,13 +1,3 @@
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonCreator;
-
 /**
  * Apartment.java
  * 
@@ -19,6 +9,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
  * Date Last Modified: 08/05/2025
  * 
  */
+package models;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonCreator;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Apartment {
 	

@@ -8,7 +8,10 @@
  * 
  * Date Last Modified: 08/05/2025
  */
-
+package scraper;
+import models.Apartment;
+import models.FeatureType;
+import models.Flag;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.File;

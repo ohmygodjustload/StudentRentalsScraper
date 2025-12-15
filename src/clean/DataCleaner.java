@@ -1,3 +1,6 @@
+package clean;
+import models.Apartment;
+
 import java.util.*;
 import java.util.regex.*;
 import java.util.stream.Collectors;

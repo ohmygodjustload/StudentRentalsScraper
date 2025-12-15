@@ -7,6 +7,8 @@
  * 
  * Date Last Modified: 08/05/2025
  */
+package models;
+
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Flag {

@@ -1,5 +1,3 @@
-import java.util.List;
-
 /**
  * ApartmentScraper.java
  * 
@@ -9,6 +7,10 @@ import java.util.List;
  * 
  * Date Last Modified: 05/11/2025
  */
+package scraper;
+import models.Apartment;
+import java.util.List;
+
 public interface ApartmentScraper {
 	List<Apartment> scrape();
 	String getSourceName();

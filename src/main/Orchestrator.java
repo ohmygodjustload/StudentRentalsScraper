@@ -1,3 +1,15 @@
+package main;
+
+import api.CrimeDataAPI;
+import api.TravelTimeAPI;
+import api.WalkScoreAPI;
+import clean.DataCleaner;
+import models.Apartment;
+import scraper.ApartmentScraper;
+import scraper.StudentRentalsScraper;
+import utils.CsvUtils;
+import utils.JsonUtils;
+import geocoding.DataMerger;
 import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDateTime;
@@ -95,6 +107,7 @@ import java.util.stream.Stream;
  * - WalkScore & CrimeData still operate on cleaned addresses
  * - CSVUtils writes numeric fields correctly
  * - JsonUtils reflects both raw + normalized features if desired
+ * - Make API keys secure
  */
 
 /**

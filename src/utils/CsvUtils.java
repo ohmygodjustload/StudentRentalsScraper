@@ -1,3 +1,7 @@
+package utils;
+
+import models.Apartment;
+import models.Flag;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
