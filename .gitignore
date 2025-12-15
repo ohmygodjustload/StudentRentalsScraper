@@ -13,6 +13,17 @@
 # Output directory
 /output/
 
+# Temporary files and directories
+/tmp/
+*.tmp
+*.temp
+
+# Test files
+**/*Test.java
+
+# config directory and Properties files
+/config/
+*.properties
 
 # API Classes (for now)
 **/*API.java
