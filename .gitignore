@@ -26,7 +26,7 @@
 *.properties
 
 # API Classes (for now)
-**/*API.java
+#**/*API.java
 
 *.ctxt
 
