@@ -107,9 +107,9 @@ public class StudentRentalsScraper implements ApartmentScraper {
     // Regex pattern to extract prices with different formats (e.g. $650, $1,200)
     private static final Pattern PRICE_PATTERN = Pattern.compile("\\$(\\d{4,}|\\d{1,3}(?:,\\d{3})*)");
 
-    // Min and Max numbers of listing IDs to check
-    private static final int MIN_ID = 0;
-    private static final int MAX_ID = 950;
+    // Min and Max numbers of listing IDs to check (0 - 900)
+    private static final int MIN_ID = 20;
+    private static final int MAX_ID = 50;
     
     // Delay between requests to avoid hammering the server
     private static final int DELAY_MS = 800 + (int)(Math.random() * 400); // Random delay between 800-1200 ms
@@ -150,9 +150,9 @@ public class StudentRentalsScraper implements ApartmentScraper {
                 Map<FeatureType, String> features = extractFeatures(doc);
                 features.forEach(apt::setFeature);
                 
-                handleMissingFeatures(apt, doc);
+                // handleMissingFeatures(apt, doc);
                 
-                apt.calculateBasicScore();
+                // apt.calculateBasicScore();
                 
                 results.add(apt);
                 
@@ -184,12 +184,15 @@ public class StudentRentalsScraper implements ApartmentScraper {
     	return false;
 	}
 
+
+	// TODO - move these methods to data cleaner class later
 	/**
      * Normalizes the bed/bath info for compatibility in Excel
      * @param raw The raw bed/bath info from the page source
      * @return The correctly formatted bed/bath info
      */
     private String normalizeBedBath(String raw) {
+    	// TODO - remove/move out: remove normalizeBedBath from scraper
     	if (raw == null) {
     		return "";
     	}
@@ -206,9 +209,13 @@ public class StudentRentalsScraper implements ApartmentScraper {
     	String bedPart = parts[0].strip();
     	String bathPart = parts[1].strip();
     	
+		// TODO - remove/move out: remove bedroom/bathroom normalization inside handleBedBath
     	boolean isStudio = false;
+
+		// TODO - remove/move out: remove integer parsing for bed counts
     	int beds = 0;
     	try {
+    		// TODO - remove/move out: Stop converting fractional values to ints
     		beds = Integer.parseInt(bedPart);
     		if (beds == 0 || bedPart.equalsIgnoreCase("Studio")) {
     			isStudio = true;
@@ -216,9 +223,10 @@ public class StudentRentalsScraper implements ApartmentScraper {
     	} catch (NumberFormatException e) {
     		// If bed part non-numeric, leave as-is
     	}
-    	
+    	// TODO - remove "xbd/yba" formatting from scraper and do it in cleaner
     	String bathFormatted;
     	try {
+    		// TODO - remove/move out: Stop stripping or modifying scraped strings other than .strip()
     		double bath = Double.parseDouble(bathPart);
     		if (bath == (int) bath) {
     			bathFormatted = String.format("%dba", (int) bath);
@@ -230,6 +238,7 @@ public class StudentRentalsScraper implements ApartmentScraper {
     	}
     	
     	if (isStudio) {
+			// TODO - remove automatic "Studio/1ba" conversion from scraper and do it in cleaner
     		return "Studio/" + bathFormatted;
     	} else if (beds > 0) {
     		return String.format("%dbd/%s", beds, bathFormatted);
@@ -320,6 +329,11 @@ public class StudentRentalsScraper implements ApartmentScraper {
         return featureMap;
 	}
 
+	/**
+	 * Handles missing features by attempting to extract from title
+	 * @param apt The apartment being processed
+	 * @param doc The document to parse
+	 */
     private void handleMissingFeatures(Apartment apt, Document doc) {
     	
     	// Landlord fallback
@@ -329,6 +343,13 @@ public class StudentRentalsScraper implements ApartmentScraper {
     	handleBedBath(apt, doc);
     }
 
+	// TODO - ensure this method does NOT modify the raw data except for flagging missing. fallback logic moved to cleaner.
+	/**
+	 * Handles missing landlord info by attempting to extract from title
+	 * and flags accordingly (missing or from title)
+	 * @param apt The apartment being processed
+	 * @param doc The document to parse
+	 */
 	private void handleLandlord(Apartment apt, Document doc) {
     	if (apt.getFeature(FeatureType.LANDLORD) == null) {
     		String title = cleanTitle(doc.title());
@@ -344,30 +365,47 @@ public class StudentRentalsScraper implements ApartmentScraper {
 		
 	}
 
+	// TODO - ensure this method handles studio and other edge cases correctly
+	// TODO - ensure this method does NOT modify the raw data except for flagging missing. fallback/normalization logic moved to cleaner.
+	/**
+	 * Handles missing bed/bath info by attempting to extract from title
+	 * and flags accordingly (missing or from title)
+	 * @param apt The apartment being processed
+	 * @param doc The document to parse
+	 */
 	private void handleBedBath(Apartment apt, Document doc) {
+    	// Preserve raw scraped value if present
     	String bedBath = apt.getFeature(FeatureType.BED_BATH);
     	if (bedBath == null) {
     		String title = cleanTitle(doc.title());
     		String[] titleParts = parseTitle(title);
     		if (titleParts != null && titleParts.length > 1) {
     			bedBath = titleParts[1];
-    			apt.addFlag(Flag.BEDBATH_FROM_TITLE);
+    			apt.addFlag(Flag.BEDBATH_FROM_TITLE); // Mark that bed/bath was from title, not features
     		} else {
     			apt.addFlag(Flag.MISSING_BEDBATH);
 				bedBath = ""; // Avoid null pointer error
     		}
     	} else {
-    		// The bed/bath info is a
+    		// The bed/bath info is already present from features
     		if (apt.getFeature(FeatureType.BED_BATH).toLowerCase().contains("studio")) {
     			apt.setFeature(FeatureType.BED_BATH, "Studio/1ba");
     			return;
     		}
     	}
     	
+		// TODO - remove normalization here and do it in cleaner
     	// Normalize regardless of source
     	apt.setFeature(FeatureType.BED_BATH, normalizeBedBath(bedBath));
 	}
 
+	// TODO - shit ass poop fart
+	/**
+	 * DEPRECATED - use src/utils/JsonUtils and src/utils/CsvUtils instead
+	 * 
+	 * Saves final scraped listings to JSON and CSV files
+	 * @param listings The list of valid apartment listings
+	 */
 	private void saveResults(List<Apartment> listings) {
 		saveToJSON(listings);
 		saveToCSV(listings);

@@ -30,11 +30,16 @@ public class Apartment {
 	// Additional essential attributes (added after instantiation)
     private String price;
 
+    // TODO - remove this attribute and algoroithm and do it in a separate scorer class
     private double dealScore; // Calculate with subjective scoring system
     
     // Feature Storage
     private EnumMap<FeatureType, String> features = new EnumMap<>(FeatureType.class);
-    private List<Flag> flags = new ArrayList<>(); // A list of notable flags, such as "Missing Landlord"
+    private List<Flag> flags = new ArrayList<>(); // A list of potential issues with the listing (missing info, etc.)
+
+    // Raw Scraped Attributes
+    @JsonIgnore
+    private String rawTitle; // the title of the listing used for fallback info (landlord, bed/bath) if missing from features
     
     // Geocoding attributes
     private double latitude;
@@ -68,6 +73,7 @@ public class Apartment {
     public void setPrice(String price) { this.price = price; }
     public void setDealScore(double dealScore) { this.dealScore = dealScore; }
     public void setAddress(String address) {this.address = address; }
+    public void setTitle(String title) { this.rawTitle = title; }
     
     // Feature management
     public void setFeature(FeatureType type, String value) {
@@ -79,6 +85,7 @@ public class Apartment {
         this.features = new EnumMap<>(features);
     }
     
+    @JsonProperty("landlord")
     public void setLandlord(String landlord) {
         setFeature(FeatureType.LANDLORD, landlord);
     }
@@ -152,17 +159,22 @@ public class Apartment {
     // Convenience getters
     @JsonIgnore
     public String getLandlord() {
-    	return features.getOrDefault(FeatureType.LANDLORD, "Unkown");
+    	return features.getOrDefault(FeatureType.LANDLORD, "n/a");
     }
     
     @JsonIgnore
     public String getBedBath() {
-        return features.getOrDefault(FeatureType.BED_BATH, "");
+        return features.getOrDefault(FeatureType.BED_BATH, "n/a");
+    }
+
+    @JsonIgnore
+    public String getRawTitle() {
+        return rawTitle != null ? rawTitle : "n/a";
     }
     
     @JsonIgnore
     public String getAmenities() {
-        return features.getOrDefault(FeatureType.INCLUDED, "");
+        return features.getOrDefault(FeatureType.INCLUDED, "n/a");
     }
     
     // Add a flag

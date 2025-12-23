@@ -36,6 +36,28 @@ public class CsvUtils {
         }
     }
 
+    // TODO : Implement reading from CSV
+    // public static List<Apartment> fromCsv(String filePath) {
+    //     List<Apartment> listings = new ArrayList<>();
+    //     try (BufferedReader reader = Files.newBufferedReader(Paths.get(filePath))) {
+    //         String line = reader.readLine(); // Skip header
+    //         while ((line = reader.readLine()) != null) {
+    //             String[] tokens = parseCsvLine(line);
+    //             if (tokens.length < 8) continue; // Skip malformed lines
+                
+                
+    //             String[] flagTokens = unescape(tokens[7]).split(";");
+    //             Set<Flag> flags = Arrays.stream(flagTokens)
+    //                                     .map(String::trim)
+    //                                     .filter(s -> !s.isEmpty())
+    //                                     .map(Flag::valueOf)
+    //                                     .collect(Collectors.toSet());
+    //             apt.setFlags(flags);
+                
+    //             listings.add(apt);
+    //         }
+    // }
+
 
 	// Helper for escaping quotes in CSV
     private static String escape(String s) {
