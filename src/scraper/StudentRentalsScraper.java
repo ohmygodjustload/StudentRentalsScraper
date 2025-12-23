@@ -148,6 +148,7 @@ public class StudentRentalsScraper implements ApartmentScraper {
                 
                 apt.setPrice(extractPrice(doc.body().text()));
                 Map<FeatureType, String> features = extractFeatures(doc);
+				// TODO - set bed/bath as a string instead of a numeric type
                 features.forEach(apt::setFeature);
                 
                 // handleMissingFeatures(apt, doc);
@@ -396,7 +397,7 @@ public class StudentRentalsScraper implements ApartmentScraper {
     	
 		// TODO - remove normalization here and do it in cleaner
     	// Normalize regardless of source
-    	apt.setFeature(FeatureType.BED_BATH, normalizeBedBath(bedBath));
+    	// apt.setFeature(FeatureType.BED_BATH, normalizeBedBath(bedBath));
 	}
 
 	// TODO - shit ass poop fart

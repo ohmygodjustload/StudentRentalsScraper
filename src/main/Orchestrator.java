@@ -136,6 +136,8 @@ import java.util.stream.Stream;
  */
 public class Orchestrator {
 	
+    // TODO - add an ApartmentPostProcessor class to handle fallback logic and add flags
+    // Scraper → Raw Apartment → Enricher → Cleaner → Scorer → etc.
 	private enum Mode {
 		FULL_PIPELINE,			// Scrape -> Clean -> Geocode -> APIs -> Final JSON
 		SCRAPE_AND_CLEAN_ONLY,	// Scrape -> Clean -> Stop
