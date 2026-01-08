@@ -83,7 +83,7 @@ import java.util.stream.Stream;
  * - Add double bedrooms
  * - Add double bathrooms
  * - Keep existing String bedBath for CSV/GUI formatting
- * - Add getters/setters for new numeric fields
+ * - Add getters/setters for new numeric fields (if added)
  * - Update toString() if needed to reflect normalized output
  * - Consider removing bed/bath logic from scraper-facing constructor
  * 

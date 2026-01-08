@@ -23,8 +23,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 public class Apartment {
 	
 	// Core attributes (Added at instantiation)
-	private final String id;
-	private final String url;
+	private final String ID;
+	private final String URL;
 	private String address;
 	
 	// Additional essential attributes (added after instantiation)
@@ -34,7 +34,7 @@ public class Apartment {
     private double dealScore; // Calculate with subjective scoring system
     
     // Feature Storage
-    private EnumMap<FeatureType, String> features = new EnumMap<>(FeatureType.class);
+    private EnumMap<FeatureType, String> features = new EnumMap<>(FeatureType.class); // Map of all features found on listing page
     private List<Flag> flags = new ArrayList<>(); // A list of potential issues with the listing (missing info, etc.)
 
     // Raw Scraped Attributes
@@ -45,18 +45,18 @@ public class Apartment {
     private double latitude;
     private double longitude;
     private double accuracy;
-    private String geocodioAddress;
+    private String geocodioAddress; // Formatted address from Geocodio API
     
     // Attributes requiring geocoding
     private double distanceToCampus;
     
-    // Travel Time attributes
+    // Travel Time attributes (TravelTime API)
     private int walkTravelTimeSeconds;
     private String walkTravelTimeFormatted;
     private int bikeTravelTimeSeconds;
     private String bikeTravelTimeFormatted;
     
-    // Walk Score attributes
+    // Walk Score attributes (WalkScore API)
     private int walkScore;
     private String walkScoreDescription;
     private int bikeScore;
@@ -65,8 +65,8 @@ public class Apartment {
     // Constructor
     @JsonCreator
     public Apartment(@JsonProperty("id") String id, @JsonProperty("url") String url) {
-        this.id = id;
-        this.url = url;
+        this.ID = id;
+        this.URL = url;
     }
 
     // Core Setters
@@ -185,10 +185,10 @@ public class Apartment {
     
     // Getters
     @JsonProperty("id")
-    public String getID() { return id; }
+    public String getID() { return ID; }
     
     @JsonProperty("url")
-    public String getURL() { return url; }
+    public String getURL() { return URL; }
     
     @JsonProperty("address")
     public String getAddress() {return address; }
@@ -241,6 +241,14 @@ public class Apartment {
     @JsonProperty("bikeScoreDescription")
     public String getBikeScoreDescription() { return bikeScoreDescription; }
     
+    /**
+     * Calculates a basic deal score based on price and flags.
+     * The score starts at 100 and is reduced based on missing information and price per bedroom.
+     * This is a subjective scoring system and can be adjusted as needed.
+     * This specific implementation assumes at least two tenants share one bedroom.
+     * 
+     * TODO - Move this to a separate Scorer class for better separation of concerns
+     */
     public void calculateBasicScore() {
     	double score = 100;
     	
@@ -256,8 +264,7 @@ public class Apartment {
     			Integer.parseInt(bedBath.split("bd")[0]);
     		
     		double priceVal = Double.parseDouble(price.replaceAll("[^0-9]", ""));
-    		double pricePerPerson = priceVal / (beds + 1); // Because Miranda and I share a room
-    		// TODO - edit this score to reflect our prefs
+    		double pricePerPerson = priceVal / (beds + 1); // Because my Fiance and I share a room
     		if (pricePerPerson >= 500) score -= 35;
     		else if (pricePerPerson >= 475) score -= 30;
     		else if (pricePerPerson >= 450) score -= 25;

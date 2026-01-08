@@ -107,14 +107,18 @@ public class StudentRentalsScraper implements ApartmentScraper {
     // Regex pattern to extract prices with different formats (e.g. $650, $1,200)
     private static final Pattern PRICE_PATTERN = Pattern.compile("\\$(\\d{4,}|\\d{1,3}(?:,\\d{3})*)");
 
-    // Min and Max numbers of listing IDs to check (0 - 900)
+    // Min and Max numbers of listing IDs to check (0 - 900 seems to cover all)
     private static final int MIN_ID = 20;
     private static final int MAX_ID = 50;
     
     // Delay between requests to avoid hammering the server
     private static final int DELAY_MS = 800 + (int)(Math.random() * 400); // Random delay between 800-1200 ms
     
-    // Method to scrape the given URL
+	/**
+	 * Scrapes apartment listings from StudentRentalsLaCrosse.com
+	 * 
+	 * @return A list of valid Apartment listings
+	 */
     @Override
     public List<Apartment> scrape() {
     	// List to hold all valid listings
@@ -128,36 +132,36 @@ public class StudentRentalsScraper implements ApartmentScraper {
                 
                 // Fetch HTML document using Jsoup
                 Document doc = Jsoup.connect(url)
-                					.userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0")
+                					.userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:146.0) Gecko/20100101 Firefox/146.0")
                 					.timeout(10000)
                 					.ignoreHttpErrors(true)
                 					.get();
                               
-                if (isInvalidListing(doc)) {
-                	System.out.println("[INVALID LISTING]");
+                if (isInvalidListing(doc)) { // if listing is invalid
+                	System.out.println("[INVALID LISTING]"); // Log and skip
                 	Thread.sleep(DELAY_MS);
                 	continue;
                 }
-
-                // Extract address from bread crumb trail
-                String address = extractAddress(doc);
                 
                 Apartment apt = new Apartment(String.valueOf(currentID), url);
                 
-                apt.setAddress(address);
+				// Extract address from "sp_rp_bread" div
+                // String address = extractAddress(doc);
+                apt.setAddress(extractAddress(doc));
                 
                 apt.setPrice(extractPrice(doc.body().text()));
+
+				// Extract features from "rm_listing_features" div
                 Map<FeatureType, String> features = extractFeatures(doc);
-				// TODO - set bed/bath as a string instead of a numeric type
                 features.forEach(apt::setFeature);
                 
-                // handleMissingFeatures(apt, doc);
+                // handleMissingFeatures(apt, doc); // TODO - move missing feature handling to cleaner
                 
-                // apt.calculateBasicScore();
+                // apt.calculateBasicScore(); // TODO - move scoring to standalone scorer class
                 
-                results.add(apt);
+                results.add(apt); // Add valid listing to results
                 
-                System.out.printf("[VALID] %s%n", apt.toString());
+                System.out.printf("[VALID] %s%n", apt.toString()); // Log valid listing
                 
                 Thread.sleep(DELAY_MS); // Pause before next request
                 
@@ -167,13 +171,20 @@ public class StudentRentalsScraper implements ApartmentScraper {
         }
 
 //        saveResults(results);
-        return results;
+        return results; // Return all valid listings
     }
         
+	/**
+	 * Checks if a listing is invalid based on status code and content
+	 * 
+	 * @param doc The document to check
+	 * @return True if invalid, false otherwise
+	 */
     private boolean isInvalidListing(Document doc) {
     	// If 404 or contains placeholder title
+		String placeholderTitle = "Rental Listing | All Rental Listings – La Crosse – Student Rentals La Crosse";
     	if (doc.connection().response().statusCode() == 404 ||
-    		doc.title().equals("Rental Listing | All Rental Listings – La Crosse – Student Rentals La Crosse")) {
+    		doc.title().equals(placeholderTitle)) {
     		return true;
     	}
     	
@@ -189,6 +200,8 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	// TODO - move these methods to data cleaner class later
 	/**
      * Normalizes the bed/bath info for compatibility in Excel
+	 * 
+	 * SOON TO BE DEPRECATED - move to data cleaner
      * @param raw The raw bed/bath info from the page source
      * @return The correctly formatted bed/bath info
      */
@@ -250,6 +263,10 @@ public class StudentRentalsScraper implements ApartmentScraper {
 
 	/**
 	 * Fixes bad characters and extra text from listing titles
+	 * Use this method before parsing the title for landlord and bed/bath info,
+	 * not for the final stored title.
+	 * 
+	 * MIGHT BE REDUNDANT - compare results later with and without use of this method
 	 * @param input The raw title with all characters
 	 * @return The cleaned title
 	 */
@@ -261,6 +278,7 @@ public class StudentRentalsScraper implements ApartmentScraper {
 
 	/**
 	 * Extracts the landlord name and bed/bath info from the listing title
+	 * 
 	 * @param rawTitle The raw title which is the renter name and bed/bath info in one string
 	 * @return The landlord name and bed/bath info as two strings in an array
 	 */
@@ -276,9 +294,10 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	}
 
 	/**
-	 * Extracts the address from bread crumb trail
+	 * Extracts the address from "sp_rp_bread" div
+	 * 
 	 * @param doc The document to parse
-	 * @return address The String representation of the address
+	 * @return address The extracted address
 	 */
 	private String extractAddress(Document doc) {
 		String address = "";
@@ -293,7 +312,8 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	}
 
 	/**
-	 * Searches the page text for a price using regex
+	 * Searches the page text for a price using predefined regex patterns
+	 * 
 	 * @param text The page text
 	 * @return The price data
 	 */
@@ -303,8 +323,9 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	}
 
 	/**
-     * Extracts the amenities data from page and adds it to a Map
-     * along with the rest of the data under <div class="rm_listing_features">
+     * Extracts features found in the "rm_listing_features" div
+	 * (e.g. landlord, bed/bath, included amenities)
+	 * 
      * @param doc The document to parse
      * @param rows The map that will hold data under <div class="rm_listing_features">
      * @return The String representation of the amenities
@@ -331,11 +352,12 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	}
 
 	/**
-	 * Handles missing features by attempting to extract from title
+	 * Flags missing features in the apartment listing without modifying existing data
+	 * 
 	 * @param apt The apartment being processed
 	 * @param doc The document to parse
 	 */
-    private void handleMissingFeatures(Apartment apt, Document doc) {
+    private void flagMissingFeatures(Apartment apt, Document doc) {
     	
     	// Landlord fallback
     	handleLandlord(apt, doc);
