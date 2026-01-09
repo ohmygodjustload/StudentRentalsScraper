@@ -143,6 +143,7 @@ public class StudentRentalsScraper implements ApartmentScraper {
                 	continue;
                 }
                 
+				// Create new Apartment object with URL and ID
                 Apartment apt = new Apartment(String.valueOf(currentID), url);
                 
 				// Extract address from "sp_rp_bread" div
@@ -155,7 +156,7 @@ public class StudentRentalsScraper implements ApartmentScraper {
                 Map<FeatureType, String> features = extractFeatures(doc);
                 features.forEach(apt::setFeature);
                 
-                // handleMissingFeatures(apt, doc); // TODO - move missing feature handling to cleaner
+                flagMissingFeatures(apt, doc); // TODO - move missing feature handling to cleaner
                 
                 // apt.calculateBasicScore(); // TODO - move scoring to standalone scorer class
                 
@@ -197,76 +198,76 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	}
 
 
-	// TODO - move these methods to data cleaner class later
-	/**
-     * Normalizes the bed/bath info for compatibility in Excel
-	 * 
-	 * SOON TO BE DEPRECATED - move to data cleaner
-     * @param raw The raw bed/bath info from the page source
-     * @return The correctly formatted bed/bath info
-     */
-    private String normalizeBedBath(String raw) {
-    	// TODO - remove/move out: remove normalizeBedBath from scraper
-    	if (raw == null) {
-    		return "";
-    	}
-    	raw = raw.strip();
-    	if (raw.isEmpty()) {
-    		return "";
-    	}
+	// // TODO - move this method to data cleaner class later
+	// /**
+    //  * Normalizes the bed/bath info for compatibility in Excel
+	//  * 
+	//  * SOON TO BE DEPRECATED - move to data cleaner
+    //  * @param raw The raw bed/bath info from the page source
+    //  * @return The correctly formatted bed/bath info
+    //  */
+    // private String normalizeBedBath(String raw) {
+    // 	// TODO - remove/move out: remove normalizeBedBath from scraper
+    // 	if (raw == null) {
+    // 		return "";
+    // 	}
+    // 	raw = raw.strip();
+    // 	if (raw.isEmpty()) {
+    // 		return "";
+    // 	}
     	
-    	String[] parts = raw.split("/");
-    	if (parts.length != 2) {
-    		return raw; // fallback if unexpected format
-    	}
+    // 	String[] parts = raw.split("/");
+    // 	if (parts.length != 2) {
+    // 		return raw; // fallback if unexpected format
+    // 	}
     	
-    	String bedPart = parts[0].strip();
-    	String bathPart = parts[1].strip();
+    // 	String bedPart = parts[0].strip();
+    // 	String bathPart = parts[1].strip();
     	
-		// TODO - remove/move out: remove bedroom/bathroom normalization inside handleBedBath
-    	boolean isStudio = false;
+	// 	// TODO - remove/move out: remove bedroom/bathroom normalization inside handleBedBath
+    // 	boolean isStudio = false;
 
-		// TODO - remove/move out: remove integer parsing for bed counts
-    	int beds = 0;
-    	try {
-    		// TODO - remove/move out: Stop converting fractional values to ints
-    		beds = Integer.parseInt(bedPart);
-    		if (beds == 0 || bedPart.equalsIgnoreCase("Studio")) {
-    			isStudio = true;
-    		}
-    	} catch (NumberFormatException e) {
-    		// If bed part non-numeric, leave as-is
-    	}
-    	// TODO - remove "xbd/yba" formatting from scraper and do it in cleaner
-    	String bathFormatted;
-    	try {
-    		// TODO - remove/move out: Stop stripping or modifying scraped strings other than .strip()
-    		double bath = Double.parseDouble(bathPart);
-    		if (bath == (int) bath) {
-    			bathFormatted = String.format("%dba", (int) bath);
-    		} else {
-    			bathFormatted = String.format("%sba", bathPart);
-    		}
-    	} catch (NumberFormatException e) {
-    		bathFormatted = bathPart + "ba"; // if format weird, still append "ba"
-    	}
+	// 	// TODO - remove/move out: remove integer parsing for bed counts
+    // 	int beds = 0;
+    // 	try {
+    // 		// TODO - remove/move out: Stop converting fractional values to ints
+    // 		beds = Integer.parseInt(bedPart);
+    // 		if (beds == 0 || bedPart.equalsIgnoreCase("Studio")) {
+    // 			isStudio = true;
+    // 		}
+    // 	} catch (NumberFormatException e) {
+    // 		// If bed part non-numeric, leave as-is
+    // 	}
+    // 	// TODO - remove "xbd/yba" formatting from scraper and do it in cleaner
+    // 	String bathFormatted;
+    // 	try {
+    // 		// TODO - remove/move out: Stop stripping or modifying scraped strings other than .strip()
+    // 		double bath = Double.parseDouble(bathPart);
+    // 		if (bath == (int) bath) {
+    // 			bathFormatted = String.format("%dba", (int) bath);
+    // 		} else {
+    // 			bathFormatted = String.format("%sba", bathPart);
+    // 		}
+    // 	} catch (NumberFormatException e) {
+    // 		bathFormatted = bathPart + "ba"; // if format weird, still append "ba"
+    // 	}
     	
-    	if (isStudio) {
-			// TODO - remove automatic "Studio/1ba" conversion from scraper and do it in cleaner
-    		return "Studio/" + bathFormatted;
-    	} else if (beds > 0) {
-    		return String.format("%dbd/%s", beds, bathFormatted);
-    	} else { // Parsing Failed
-    		return raw;
-    	}
-	}
+    // 	if (isStudio) {
+	// 		// TODO - remove automatic "Studio/1ba" conversion from scraper and do it in cleaner
+    // 		return "Studio/" + bathFormatted;
+    // 	} else if (beds > 0) {
+    // 		return String.format("%dbd/%s", beds, bathFormatted);
+    // 	} else { // Parsing Failed
+    // 		return raw;
+    // 	}
+	// }
 
 	/**
 	 * Fixes bad characters and extra text from listing titles
 	 * Use this method before parsing the title for landlord and bed/bath info,
 	 * not for the final stored title.
 	 * 
-	 * MIGHT BE REDUNDANT - compare results later with and without use of this method
+	 * REDUNDANT - move to ApartmentPostProcessor class
 	 * @param input The raw title with all characters
 	 * @return The cleaned title
 	 */
@@ -279,6 +280,7 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	/**
 	 * Extracts the landlord name and bed/bath info from the listing title
 	 * 
+	 * REDUNDANT - move to ApartmentPostProcessor class
 	 * @param rawTitle The raw title which is the renter name and bed/bath info in one string
 	 * @return The landlord name and bed/bath info as two strings in an array
 	 */
@@ -354,33 +356,36 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	/**
 	 * Flags missing features in the apartment listing without modifying existing data
 	 * 
+	 * DEPRECATED - move logic to a standalone ApartmentPostProcessor class to handle missing features
+	 * and flagging
 	 * @param apt The apartment being processed
 	 * @param doc The document to parse
 	 */
     private void flagMissingFeatures(Apartment apt, Document doc) {
     	
     	// Landlord fallback
-    	handleLandlord(apt, doc);
+    	flagLandlord(apt, doc);
     	
     	// Bed/Bath fallback
-    	handleBedBath(apt, doc);
+    	flagBedBath(apt, doc);
     }
 
-	// TODO - ensure this method does NOT modify the raw data except for flagging missing. fallback logic moved to cleaner.
 	/**
 	 * Handles missing landlord info by attempting to extract from title
 	 * and flags accordingly (missing or from title)
+	 * 
+	 * DEPRECATED - move logic to a standalone ApartmentPostProcessor class to handle missing features
 	 * @param apt The apartment being processed
 	 * @param doc The document to parse
 	 */
-	private void handleLandlord(Apartment apt, Document doc) {
+	private void flagLandlord(Apartment apt, Document doc) {
     	if (apt.getFeature(FeatureType.LANDLORD) == null) {
     		String title = cleanTitle(doc.title());
     		String[] titleParts = parseTitle(title);
     		
     		if (titleParts != null && titleParts.length > 0) {
-    			apt.setFeature(FeatureType.LANDLORD, titleParts[0]);
-    			apt.addFlag(Flag.LANDLORD_FROM_TITLE);
+    			// apt.setFeature(FeatureType.LANDLORD, titleParts[0]);
+    			apt.addFlag(Flag.LANDLORD_FROM_TITLE); // Mark that landlord needs to be retrieved from title
     		} else {
     			apt.addFlag(Flag.MISSING_LANDLORD);
     		}
@@ -389,32 +394,33 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	}
 
 	// TODO - ensure this method handles studio and other edge cases correctly
-	// TODO - ensure this method does NOT modify the raw data except for flagging missing. fallback/normalization logic moved to cleaner.
 	/**
 	 * Handles missing bed/bath info by attempting to extract from title
 	 * and flags accordingly (missing or from title)
+	 * 
+	 * DEPRECATED - move logic to a standalone ApartmentPostProcessor class to handle missing features
 	 * @param apt The apartment being processed
 	 * @param doc The document to parse
 	 */
-	private void handleBedBath(Apartment apt, Document doc) {
+	private void flagBedBath(Apartment apt, Document doc) {
     	// Preserve raw scraped value if present
     	String bedBath = apt.getFeature(FeatureType.BED_BATH);
     	if (bedBath == null) {
     		String title = cleanTitle(doc.title());
     		String[] titleParts = parseTitle(title);
     		if (titleParts != null && titleParts.length > 1) {
-    			bedBath = titleParts[1];
-    			apt.addFlag(Flag.BEDBATH_FROM_TITLE); // Mark that bed/bath was from title, not features
+    			// bedBath = titleParts[1];
+    			apt.addFlag(Flag.BEDBATH_FROM_TITLE); // Mark that bed/bath needs to be retrieved from title
     		} else {
     			apt.addFlag(Flag.MISSING_BEDBATH);
-				bedBath = ""; // Avoid null pointer error
+				// bedBath = ""; // Avoid null pointer error
     		}
-    	} else {
-    		// The bed/bath info is already present from features
-    		if (apt.getFeature(FeatureType.BED_BATH).toLowerCase().contains("studio")) {
-    			apt.setFeature(FeatureType.BED_BATH, "Studio/1ba");
-    			return;
-    		}
+    	// } else {
+    	// 	// The bed/bath info is already present from features
+    	// 	if (apt.getFeature(FeatureType.BED_BATH).toLowerCase().contains("studio")) {
+    	// 		apt.setFeature(FeatureType.BED_BATH, "Studio/1ba");
+    	// 		return;
+    	// 	}
     	}
     	
 		// TODO - remove normalization here and do it in cleaner
@@ -423,95 +429,103 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	}
 
 	// TODO - shit ass poop fart
-	/**
-	 * DEPRECATED - use src/utils/JsonUtils and src/utils/CsvUtils instead
-	 * 
-	 * Saves final scraped listings to JSON and CSV files
-	 * @param listings The list of valid apartment listings
-	 */
-	private void saveResults(List<Apartment> listings) {
-		saveToJSON(listings);
-		saveToCSV(listings);
-	}
+	// /**
+	//  * DEPRECATED - use src/utils/JsonUtils and src/utils/CsvUtils instead
+	//  * 
+	//  * Saves final scraped listings to JSON and CSV files
+	//  * @param listings The list of valid apartment listings
+	//  */
+	// private void saveResults(List<Apartment> listings) {
+	// 	saveToJSON(listings);
+	// 	saveToCSV(listings);
+	// }
 
-	private void saveToJSON(List<Apartment> listings) {
-		ObjectMapper mapper = new ObjectMapper();
+	// /**
+	//  * Saves final scraped listings to a JSON file
+	//  * 
+	//  * DEPRECATED - use src/utils/JsonUtils instead
+	//  * @param listings The list of valid apartment listings
+	//  */
+	// private void saveToJSON(List<Apartment> listings) {
+	// 	ObjectMapper mapper = new ObjectMapper();
 		
-		// Configure mapper
-		mapper.enable(SerializationFeature.INDENT_OUTPUT);
-		mapper.registerModule(new JavaTimeModule());
+	// 	// Configure mapper
+	// 	mapper.enable(SerializationFeature.INDENT_OUTPUT);
+	// 	mapper.registerModule(new JavaTimeModule());
 		
-		try {
-			// Create metadata object
-			Map<String, Object> metadata = new HashMap<>();
-			metadata.put("source", getSourceName());
-			metadata.put("scrapeDate", LocalDateTime.now());
-			metadata.put("listingCount", listings.size());
-			metadata.put("apiVersion", "1.0");
+	// 	try {
+	// 		// Create metadata object
+	// 		Map<String, Object> metadata = new HashMap<>();
+	// 		metadata.put("source", getSourceName());
+	// 		metadata.put("scrapeDate", LocalDateTime.now());
+	// 		metadata.put("listingCount", listings.size());
+	// 		metadata.put("apiVersion", "1.0");
 			
-			// Create root object
-			Map<String, Object> root = new HashMap<>();
-			root.put("metadata", metadata);
-			root.put("apartments", listings);
+	// 		// Create root object
+	// 		Map<String, Object> root = new HashMap<>();
+	// 		root.put("metadata", metadata);
+	// 		root.put("apartments", listings);
 			
-			// Generate filename with timestamp
-			String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern
-					("yyyyMMdd_HHmmss"));
-			String filename = "listings_" + timestamp + ".json";
+	// 		// Generate filename with timestamp
+	// 		String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern
+	// 				("yyyyMMdd_HHmmss"));
+	// 		String filename = "listings_" + timestamp + ".json";
 			
-			// Write to file
-			mapper.writeValue(new File(filename), root);
+	// 		// Write to file
+	// 		mapper.writeValue(new File(filename), root);
 			
-			System.out.printf("%nSaved %d listings to %s%n", listings.size(), filename);
-		} catch (IOException e) {
-			System.err.println("Error saving JSON: " + e.getMessage());
-			try {
-				String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern
-						("yyyyMMdd_HHmmss"));
-				String filename = "listings_error_" + timestamp + ".json";
-				mapper.writeValue(new File(filename), listings);
-			} catch (IOException ex) {
-				System.err.println("Critical error saving fallback JSON: " + ex.getMessage());
-			}
-		}
-	}
+	// 		System.out.printf("%nSaved %d listings to %s%n", listings.size(), filename);
+	// 	} catch (IOException e) {
+	// 		System.err.println("Error saving JSON: " + e.getMessage());
+	// 		try {
+	// 			String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern
+	// 					("yyyyMMdd_HHmmss"));
+	// 			String filename = "listings_error_" + timestamp + ".json";
+	// 			mapper.writeValue(new File(filename), listings);
+	// 		} catch (IOException ex) {
+	// 			System.err.println("Critical error saving fallback JSON: " + ex.getMessage());
+	// 		}
+	// 	}
+	// }
 
-	/**
-     * Saves final scraped listings to a CSV file
-     * @param listings The list of valid apartment listings
-     */
-    private void saveToCSV(List<Apartment> listings) {
-    	String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern
-				("yyyyMMdd_HHmmss"));
-    	String filename = "listings_" + timestamp + ".csv";
-        try (FileWriter writer = new FileWriter(filename)) {
-            writer.append("URL,Landlord,Bed/Bath,Address,Price,Amenities,DealScore,Flags\n");
-            for (Apartment apt : listings) {
-                writer.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%.1f,\"%s\"%n",
-                	escape(apt.getURL()),
-                	escape(apt.getLandlord()),
-                	escape(apt.getBedBath()),
-                	escape(apt.getAddress()),
-                	escape(apt.getPrice()),
-                	escape(apt.getAmenities()),
-                	apt.getDealScore(),
-                	escape(apt.getFlags().toString())
-                ));
-            }
-            System.out.printf("%nSaved %d listings to %s%n", listings.size(), filename);
-        } catch (IOException e) {
-            System.out.println("Error saving CSV: " + e.getMessage());
-        }
-    }
+	// /**
+    //  * Saves final scraped listings to a CSV file
+	//  * 
+	//  * DEPRECATED - use src/utils/CsvUtils instead
+    //  * @param listings The list of valid apartment listings
+    //  */
+    // private void saveToCSV(List<Apartment> listings) {
+    // 	String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern
+	// 			("yyyyMMdd_HHmmss"));
+    // 	String filename = "listings_" + timestamp + ".csv";
+    //     try (FileWriter writer = new FileWriter(filename)) {
+    //         writer.append("URL,Landlord,Bed/Bath,Address,Price,Amenities,DealScore,Flags\n");
+    //         for (Apartment apt : listings) {
+    //             writer.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%.1f,\"%s\"%n",
+    //             	escape(apt.getURL()),
+    //             	escape(apt.getLandlord()),
+    //             	escape(apt.getBedBath()),
+    //             	escape(apt.getAddress()),
+    //             	escape(apt.getPrice()),
+    //             	escape(apt.getAmenities()),
+    //             	apt.getDealScore(),
+    //             	escape(apt.getFlags().toString())
+    //             ));
+    //         }
+    //         System.out.printf("%nSaved %d listings to %s%n", listings.size(), filename);
+    //     } catch (IOException e) {
+    //         System.out.println("Error saving CSV: " + e.getMessage());
+    //     }
+    // }
 
-    /**
-     * Escapes quotes for CSV compatibility
-     * @param input
-     * @return input without quotes
-     */
-    private String escape(String input) {
-        return input.replace("\"", "\"\"");
-    }
+    // /**
+    //  * Escapes quotes for CSV compatibility
+    //  * @param input
+    //  * @return input without quotes
+    //  */
+    // private String escape(String input) {
+    //     return input.replace("\"", "\"\"");
+    // }
 
     @Override
     public String getSourceName() {
