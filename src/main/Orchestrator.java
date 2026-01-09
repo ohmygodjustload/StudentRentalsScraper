@@ -25,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 // Flask server - Why is this here?
@@ -43,20 +44,16 @@ import java.util.stream.Stream;
  * [keep in scraper]
  * - Extract raw strings EXACTLY from HTML
  * - Store raw bed/bath feature: e.g. "1.75/1"
- * - If bed/bath missing, mark Flag.MISSING_BEDBATH
  * - Provide fallback detection ONLY when scraper MUST avoid a null 
  * - (e.g. missing landlord -> fallback to doc text)
  * [Add these changes]
  * - Ensure scraper sets apt.setFeature(BED_BATH, rawValue) exactly as scraped
  * - Ensure scraper DOES NOT call normalizeBedBath
- * - Replace early-cleaning with simple NPE-safe raw passthrough
- * - Add flag for fallback values rather than transforming them
- * - Keep calculateBasicScore() (BUT simplify if needed later)
+ * - Replace early-cleaning with an ApartmentPostProcessor class
  * [New scraper responsibilities]
  * - Raw extraction
- * - Flagging missing/odd data
  * - NEVER modifying or interpreting data
- * - Returning the dirtiest possible “raw truth”
+ * - Returning the dirtiest possible "raw truth"
  */
 
 /**
@@ -161,6 +158,21 @@ public class Orchestrator {
 	// Base output directory
 	private static final String OUTPUT_DIR = "C:\\Users\\drew1\\Programming\\StudentRentalsScraper\\output";
 
+    // TODO - optionally implement logging framework instead of System.out.println
+    private static final long START_TIME = System.nanoTime();
+
+    /**
+     * Logs elapsed time since start of program.
+     * 
+     * @param stage The stage name to log.
+     */
+    private static void logElapsedTime(String stage) {
+        long elapsedNanos = System.nanoTime() - START_TIME;
+        long elapsedSeconds = TimeUnit.NANOSECONDS.toSeconds(elapsedNanos);
+        System.out.println("[" + stage + "] Elapsed time: " + elapsedSeconds + " seconds");
+    }
+    // TODO - add attribute to track total runtime of pipeline
+
 	// Helper to generate unique filenames
     private static String uniqueFilename(String baseName, String extension, String timestamp) {
         return baseName + "_" + timestamp + "." + extension;
@@ -204,6 +216,9 @@ public class Orchestrator {
                         uniqueFilename("listings_scraped", "json", runTimestamp)).toString();
                     JsonUtils.toJson(apartments, scrapedJson);
                     System.out.println("[Scraper] Raw data saved: " + scrapedJson);
+
+                    // Log elapsed time after scraping
+                    logElapsedTime("Scraper");
                     
                     // Clean data
                     apartments = cleaner.clean(apartments);
@@ -218,6 +233,9 @@ public class Orchestrator {
                     CsvUtils.toCsv(apartments, cleanedCsv);
                     System.out.println("[Cleaner] Cleaned data saved: " + cleanedJson);
                     System.out.println("[Cleaner] Cleaned data saved: " + cleanedCsv);
+
+                    // Log elapsed time after cleaning
+                    logElapsedTime("Cleaner");
                     
                     if (RUN_MODE == Mode.SCRAPE_AND_CLEAN_ONLY) {
                     	System.out.println("[Orchestrator] SCRAPE_AND_CLEAN_ONLY complete. Exiting.");
@@ -243,6 +261,11 @@ public class Orchestrator {
                     JsonUtils.toJson(apartments, cleanedJson);
                     CsvUtils.toCsv(apartments, cleanedCsv);
                     System.out.println("[Cleaner] Cleaned data saved: " + cleanedJson);
+                    System.out.println("[Cleaner] Cleaned data saved: " + cleanedCsv);
+
+                    // Log elapsed time after cleaning
+                    logElapsedTime("Cleaner");
+
                     return;
                     
 				case GEOCODE_ONLY:
@@ -271,7 +294,12 @@ public class Orchestrator {
                 
                 System.out.println("[Geocoder] Pause: Place the enhanced Geocod.io CSV in the output folder");
                 System.out.println("[Geocoder] Press Enter to continue after placing geocodio.csv...");
-                new Scanner(System.in).nextLine();
+                // Wait for user to press Enter and ensure the Scanner is closed
+                try (Scanner sc = new Scanner(System.in)) {
+                    sc.nextLine();
+                } catch (Exception e) {
+                    // Ignore
+                }
                 
                 String geocodioCsv = Paths.get(OUTPUT_DIR + "\\Geocoded", "geocodio.csv").toString();
                 DataMerger merger = new DataMerger();
@@ -283,6 +311,9 @@ public class Orchestrator {
                     uniqueFilename("listings_geocoded", "json", runTimestamp)).toString();
                 JsonUtils.toJson(apartments, geocodedJson);
                 System.out.println("[Geocoder] Geocoded data saved: " + geocodedJson);
+
+                // Log elapsed time after geocoding
+                logElapsedTime("Geocoder");
                 
                 if (RUN_MODE == Mode.GEOCODE_ONLY) {
                     System.out.println("[Orchestrator] GEOCODE_ONLY complete. Exiting.");
@@ -330,9 +361,15 @@ public class Orchestrator {
                     uniqueFilename("listings_final", "json", runTimestamp)).toString();
                 JsonUtils.toJson(apartments, finalJson);
                 System.out.println("[APIs] Final data saved: " + finalJson);
+
+                // Log elapsed time after API enrichment
+                logElapsedTime("APIs");
             }
             
             System.out.println("[Orchestrator] Pipeline complete");
+
+            // Log total elapsed time
+            logElapsedTime("Total");
 		} catch (IOException e) {
 			System.err.println("[ERROR] Pipeline failed: " + e.getMessage());
             e.printStackTrace();
