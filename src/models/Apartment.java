@@ -25,9 +25,9 @@ public class Apartment {
 	// Core attributes (Added at instantiation)
 	private final String ID;
 	private final String URL;
-	private String address;
 	
 	// Additional essential attributes (added after instantiation)
+    private String address;
     private String price;
 
     // TODO - remove this attribute and algoroithm and do it in a separate scorer class
@@ -247,6 +247,7 @@ public class Apartment {
      * This is a subjective scoring system and can be adjusted as needed.
      * This specific implementation assumes at least two tenants share one bedroom.
      * 
+     * DEPRECATED - Move to separate Scorer class
      * TODO - Move this to a separate Scorer class for better separation of concerns
      */
     public void calculateBasicScore() {
@@ -278,7 +279,12 @@ public class Apartment {
     	this.dealScore = Math.max(0, Math.min(100, score));
     }
 
-    // Helper method to format travel times to mm:ss format
+    /**
+     * Helper method to format travel times to mm:ss format
+     * 
+     * @param seconds The travel time in seconds
+     * @return Formatted travel time string in mm:ss format
+     */
     private String formatTravelTime(int seconds) {
     	return String.format("%02d:%02d", seconds / 60, seconds % 60);
 	}
