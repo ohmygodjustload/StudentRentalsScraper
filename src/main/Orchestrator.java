@@ -1,3 +1,11 @@
+/**
+ * Main orchestrator for the apartment data pipeline.
+ * Coordinates scraping, cleaning, geocoding, and API enrichment.
+ * Outputs intermediate and final results to JSON and CSV files.
+ * 
+ * @author Andrew Peirce
+ * Date Last Modified: 01/09/2026
+ */
 package main;
 
 import api.CrimeDataAPI;

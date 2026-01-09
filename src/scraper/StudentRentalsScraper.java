@@ -5,8 +5,7 @@
  * listed on the studentrenatlslacrosse.com web site and output relevant info to a CSV.
  * 
  * @author Andrew Peirce
- * 
- * Date Last Modified: 08/05/2025
+ * Date Last Modified: 01/09/2026
  */
 package scraper;
 import models.Apartment;
