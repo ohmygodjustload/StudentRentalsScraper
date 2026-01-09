@@ -95,11 +95,12 @@ public class StudentRentalsScraper implements ApartmentScraper {
     private static final Pattern PRICE_PATTERN = Pattern.compile("\\$(\\d{4,}|\\d{1,3}(?:,\\d{3})*)");
 
     // Min and Max numbers of listing IDs to check (0 - 900 seems to cover all)
-    private static final int MIN_ID = 50;
-    private static final int MAX_ID = 75;
+    private static final int MIN_ID = 0;
+    private static final int MAX_ID = 900;
     
     // Delay between requests to avoid hammering the server
-    private static final int DELAY_MS = 800 + (int)(Math.random() * 400); // Random delay between 800-1200 ms
+	// TODO - change this back to 800-1200 ms after testing
+    private static final int DELAY_MS = 100; // Random delay between 800-1200 ms
     
 	/**
 	 * Scrapes apartment listings from StudentRentalsLaCrosse.com
