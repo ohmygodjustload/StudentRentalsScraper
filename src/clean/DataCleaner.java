@@ -1,3 +1,12 @@
+/**
+ * A class to clean and normalize apartment data.
+ * This includes standardizing addresses, landlord names, and normalizing bed/bath formats.
+ * It uses explicit mappings and regex patterns to handle common variations and errors.
+ * TODO - expand landlord mappings as needed.
+ * 
+ * @author Andrew Peirce
+ * Date Last Modified: 01/09/2026
+ */
 package clean;
 import models.Apartment;
 
@@ -153,6 +162,8 @@ public class DataCleaner {
         Map.entry("1108 Vine St-RENTED La Crosse WI", "1108 Vine St, La Crosse WI")
 	);
 	
+	// TODO - normalize bed/bath formats using old StudentRentalsScraper method
+
 	// Regex to parse address components
 	private static final Pattern ADDRESS_PATTERN = Pattern.compile(
 		"(\\d+)\\s+(.+?)\\s+([A-Za-z]+(?: [A-Za-z]+)?)\\s+([A-Z]{2})$");
