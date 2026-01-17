@@ -255,7 +255,7 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	 * Use this method before parsing the title for landlord and bed/bath info,
 	 * not for the final stored title.
 	 * 
-	 * REDUNDANT - move to ApartmentPostProcessor class
+	 * REDUNDANT - might not be needed, test with and without this method
 	 * @param input The raw title with all characters
 	 * @return The cleaned title
 	 */
@@ -268,7 +268,6 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	/**
 	 * Extracts the landlord name and bed/bath info from the listing title
 	 * 
-	 * REDUNDANT - move to ApartmentPostProcessor class
 	 * @param rawTitle The raw title which is the renter name and bed/bath info in one string
 	 * @return The landlord name and bed/bath info as two strings in an array
 	 */
@@ -342,12 +341,15 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	}
 
 	/**
-	 * Flags missing features in the apartment listing without modifying existing data
+	 * Flags missing features in the apartment listing and attempts fallbacks
+	 * to extract from title if possible. This is because some 
+	 * listings may be missing essential info like landlord or bed/bath
+	 * in the features section, so we try to extract from the title,
+	 * which is most often formatted as such:
+	 * Example Properties LLC - 2br/1ba - 1234St - Available 6/1/2027 - No Pets
 	 * 
-	 * DEPRECATED - move logic to a standalone ApartmentPostProcessor class to handle missing features
-	 * and flagging
 	 * @param apt The apartment being processed
-	 * @param doc The document to parse
+	 * @param doc The HTML document to parse
 	 */
     private void flagMissingFeatures(Apartment apt, Document doc) {
     	
@@ -362,7 +364,6 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	 * Handles missing landlord info by attempting to extract from title
 	 * and flags accordingly (missing or from title)
 	 * 
-	 * DEPRECATED - move logic to a standalone ApartmentPostProcessor class to handle missing features
 	 * @param apt The apartment being processed
 	 * @param doc The document to parse
 	 */
@@ -372,13 +373,12 @@ public class StudentRentalsScraper implements ApartmentScraper {
     		String[] titleParts = parseTitle(title);
     		
     		if (titleParts != null && titleParts.length > 0) {
-    			// apt.setFeature(FeatureType.LANDLORD, titleParts[0]);
+    			apt.setFeature(FeatureType.LANDLORD, titleParts[0]); // Set landlord from title
     			apt.addFlag(Flag.LANDLORD_FROM_TITLE); // Mark that landlord needs to be retrieved from title
     		} else {
     			apt.addFlag(Flag.MISSING_LANDLORD);
     		}
-    	}
-		
+		}
 	}
 
 	// TODO - ensure this method handles studio and other edge cases correctly
@@ -386,7 +386,6 @@ public class StudentRentalsScraper implements ApartmentScraper {
 	 * Handles missing bed/bath info by attempting to extract from title
 	 * and flags accordingly (missing or from title)
 	 * 
-	 * DEPRECATED - move logic to a standalone ApartmentPostProcessor class to handle missing features
 	 * @param apt The apartment being processed
 	 * @param doc The document to parse
 	 */
@@ -397,123 +396,16 @@ public class StudentRentalsScraper implements ApartmentScraper {
     		String title = cleanTitle(doc.title());
     		String[] titleParts = parseTitle(title);
     		if (titleParts != null && titleParts.length > 1) {
-    			// bedBath = titleParts[1];
+    			bedBath = titleParts[1];
     			apt.addFlag(Flag.BEDBATH_FROM_TITLE); // Mark that bed/bath needs to be retrieved from title
+				apt.setFeature(FeatureType.BED_BATH, bedBath); // Set bed/bath from title
     		} else {
-    			apt.addFlag(Flag.MISSING_BEDBATH);
-				// bedBath = ""; // Avoid null pointer error
+    			apt.addFlag(Flag.MISSING_BEDBATH); // Mark that listing is missing bed/bath info from both features and title
     		}
-    	// } else {
-    	// 	// The bed/bath info is already present from features
-    	// 	if (apt.getFeature(FeatureType.BED_BATH).toLowerCase().contains("studio")) {
-    	// 		apt.setFeature(FeatureType.BED_BATH, "Studio/1ba");
-    	// 		return;
-    	// 	}
     	}
-    	
-		// TODO - remove normalization here and do it in cleaner
-    	// Normalize regardless of source
-    	// apt.setFeature(FeatureType.BED_BATH, normalizeBedBath(bedBath));
 	}
 
 	// TODO - shit ass poop fart
-	// /**
-	//  * DEPRECATED - use src/utils/JsonUtils and src/utils/CsvUtils instead
-	//  * 
-	//  * Saves final scraped listings to JSON and CSV files
-	//  * @param listings The list of valid apartment listings
-	//  */
-	// private void saveResults(List<Apartment> listings) {
-	// 	saveToJSON(listings);
-	// 	saveToCSV(listings);
-	// }
-
-	// /**
-	//  * Saves final scraped listings to a JSON file
-	//  * 
-	//  * DEPRECATED - use src/utils/JsonUtils instead
-	//  * @param listings The list of valid apartment listings
-	//  */
-	// private void saveToJSON(List<Apartment> listings) {
-	// 	ObjectMapper mapper = new ObjectMapper();
-		
-	// 	// Configure mapper
-	// 	mapper.enable(SerializationFeature.INDENT_OUTPUT);
-	// 	mapper.registerModule(new JavaTimeModule());
-		
-	// 	try {
-	// 		// Create metadata object
-	// 		Map<String, Object> metadata = new HashMap<>();
-	// 		metadata.put("source", getSourceName());
-	// 		metadata.put("scrapeDate", LocalDateTime.now());
-	// 		metadata.put("listingCount", listings.size());
-	// 		metadata.put("apiVersion", "1.0");
-			
-	// 		// Create root object
-	// 		Map<String, Object> root = new HashMap<>();
-	// 		root.put("metadata", metadata);
-	// 		root.put("apartments", listings);
-			
-	// 		// Generate filename with timestamp
-	// 		String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern
-	// 				("yyyyMMdd_HHmmss"));
-	// 		String filename = "listings_" + timestamp + ".json";
-			
-	// 		// Write to file
-	// 		mapper.writeValue(new File(filename), root);
-			
-	// 		System.out.printf("%nSaved %d listings to %s%n", listings.size(), filename);
-	// 	} catch (IOException e) {
-	// 		System.err.println("Error saving JSON: " + e.getMessage());
-	// 		try {
-	// 			String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern
-	// 					("yyyyMMdd_HHmmss"));
-	// 			String filename = "listings_error_" + timestamp + ".json";
-	// 			mapper.writeValue(new File(filename), listings);
-	// 		} catch (IOException ex) {
-	// 			System.err.println("Critical error saving fallback JSON: " + ex.getMessage());
-	// 		}
-	// 	}
-	// }
-
-	// /**
-    //  * Saves final scraped listings to a CSV file
-	//  * 
-	//  * DEPRECATED - use src/utils/CsvUtils instead
-    //  * @param listings The list of valid apartment listings
-    //  */
-    // private void saveToCSV(List<Apartment> listings) {
-    // 	String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern
-	// 			("yyyyMMdd_HHmmss"));
-    // 	String filename = "listings_" + timestamp + ".csv";
-    //     try (FileWriter writer = new FileWriter(filename)) {
-    //         writer.append("URL,Landlord,Bed/Bath,Address,Price,Amenities,DealScore,Flags\n");
-    //         for (Apartment apt : listings) {
-    //             writer.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%.1f,\"%s\"%n",
-    //             	escape(apt.getURL()),
-    //             	escape(apt.getLandlord()),
-    //             	escape(apt.getBedBath()),
-    //             	escape(apt.getAddress()),
-    //             	escape(apt.getPrice()),
-    //             	escape(apt.getAmenities()),
-    //             	apt.getDealScore(),
-    //             	escape(apt.getFlags().toString())
-    //             ));
-    //         }
-    //         System.out.printf("%nSaved %d listings to %s%n", listings.size(), filename);
-    //     } catch (IOException e) {
-    //         System.out.println("Error saving CSV: " + e.getMessage());
-    //     }
-    // }
-
-    // /**
-    //  * Escapes quotes for CSV compatibility
-    //  * @param input
-    //  * @return input without quotes
-    //  */
-    // private String escape(String input) {
-    //     return input.replace("\"", "\"\"");
-    // }
 
     @Override
     public String getSourceName() {
