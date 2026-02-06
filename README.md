@@ -48,17 +48,18 @@ The project is driven by the `Orchestrator` class, which executes a series of st
 The entire pipeline is controlled by the `Orchestrator` class. To run the application, configure the `RUN_MODE` static final variable inside `src/main/Orchestrator.java`.
 
 1.  **Clone the repository.**
-2.  **Open the project in your favorite Java IDE.**
-3.  **Navigate to `src/main/Orchestrator.java`.**
-4.  **Set the `RUN_MODE`**: Choose one of the available modes:
+2.  **Create folder /config/ and add files CrimeData.properties, TravelTime.properties, and WalkScore.properties. These contain API keys**
+3.  **Open the project in your favorite Java IDE.**
+4.  **Navigate to `src/main/Orchestrator.java`.**
+5.  **Set the `RUN_MODE`**: Choose one of the available modes:
     -   `FULL_PIPELINE`: Executes all steps from scraping to final API enrichment.
     -   `SCRAPE_AND_CLEAN_ONLY`: Scrapes data and cleans it, then stops.
     -   `CLEAN_ONLY`: Loads the latest raw scraped JSON and runs the cleaning process.
     -   `GEOCODE_ONLY`: Loads the latest cleaned data and merges it with the geocoding CSV.
     -   `APIS_ONLY`: Loads the latest geocoded data and runs all API enrichment steps.
     -   `RESUME_FROM_CLEANED`: Skips scraping and starts from the geocoding step.
-5.  **(Optional) Configure the output directory**: Modify the `OUTPUT_DIR` constant in `Orchestrator.java` if you wish to save files to a different location.
-6.  **Run `Orchestrator.main()`.**
+6.  **(Optional) Configure the output directory**: Modify the `OUTPUT_DIR` constant in `Orchestrator.java` if you wish to save files to a different location.
+7.  **Run `Orchestrator.main()`.**
 
 If running a mode that includes geocoding, the program will pause and prompt you to place the `geocodio.csv` file in the `output/Geocoded` directory before continuing.
 
@@ -66,3 +67,4 @@ If running a mode that includes geocoding, the program will pause and prompt you
 
 -   **Jsoup**: For parsing HTML.
 -   **Jackson**: For JSON serialization and deserialization.
+
