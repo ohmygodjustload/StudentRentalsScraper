@@ -9,6 +9,7 @@
  */
 package clean;
 import models.Apartment;
+import models.FeatureType;
 
 import java.util.*;
 import java.util.regex.*;
@@ -163,6 +164,10 @@ public class DataCleaner {
 	);
 	
 	// TODO - normalize bed/bath formats using old StudentRentalsScraper method
+	private String normalizeBedBath(String rawBedBath) {
+		return rawBedBath; // Placeholder - implement normalization logic as needed
+	}
+
 
 	// Regex to parse address components
 	private static final Pattern ADDRESS_PATTERN = Pattern.compile(
@@ -177,6 +182,7 @@ public class DataCleaner {
 	private Apartment cleanApartment(Apartment apt) {
 		apt.setAddress(normalizeAddress(apt.getAddress()));
 		apt.setLandlord(normalizeLandlord(apt.getLandlord()));
+		apt.setFeature(FeatureType.BED_BATH, normalizeBedBath(apt.getFeature(FeatureType.BED_BATH)));
 		return apt;
 	}
 	
@@ -194,7 +200,6 @@ public class DataCleaner {
 		// Handle specific patterns
 		address = address
 			.replaceAll("([a-zA-Z])(\\d)", "$1 $2") // Add space between letter and number
-//			.replaceAll("(\\d)([a-zA-Z])", "$1 $2") // Add space between number and letter
 			.replace(" N ", " North ")
 			.replace(" S ", " South ")
 			.replace(" E ", " East ")
