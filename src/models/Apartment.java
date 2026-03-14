@@ -40,6 +40,10 @@ public class Apartment {
     // Raw Scraped Attributes
     @JsonIgnore
     private String rawTitle; // the title of the listing used for fallback info (landlord, bed/bath) if missing from features
+
+    // TODO - add numeric bed/bath attributes for better scoring and filtering (bedrooms, bathrooms)
+    private double bedrooms;
+    private double bathrooms;
     
     // Geocoding attributes
     private double latitude;
@@ -74,6 +78,8 @@ public class Apartment {
     public void setDealScore(double dealScore) { this.dealScore = dealScore; }
     public void setAddress(String address) {this.address = address; }
     public void setTitle(String title) { this.rawTitle = title; }
+    public void setBedrooms(double bedrooms) { this.bedrooms = bedrooms; }
+    public void setBathrooms(double bathrooms) { this.bathrooms = bathrooms; }
     
     // Feature management
     public void setFeature(FeatureType type, String value) {
@@ -240,44 +246,6 @@ public class Apartment {
     
     @JsonProperty("bikeScoreDescription")
     public String getBikeScoreDescription() { return bikeScoreDescription; }
-    
-    /**
-     * Calculates a basic deal score based on price and flags.
-     * The score starts at 100 and is reduced based on missing information and price per bedroom.
-     * This is a subjective scoring system and can be adjusted as needed.
-     * This specific implementation assumes at least two tenants share one bedroom.
-     * 
-     * DEPRECATED - Move to separate Scorer class
-     * TODO - Move this to a separate Scorer class for better separation of concerns
-     */
-    public void calculateBasicScore() {
-    	double score = 100;
-    	
-    	// Penalize flags
-    	if (flags.contains(Flag.MISSING_LANDLORD)) score -= 25;
-    	if (flags.contains(Flag.MISSING_BEDBATH)) score -= 15;
-    	if (flags.contains(Flag.LANDLORD_FROM_TITLE)) score -= 5;
-    	if (flags.contains(Flag.BEDBATH_FROM_TITLE)) score -= 5;
-    	// Calculate price per bedroom
-    	try {
-    		String bedBath = getBedBath();
-    		int beds = bedBath.contains("Studio") ? 1 : 
-    			Integer.parseInt(bedBath.split("bd")[0]);
-    		
-    		double priceVal = Double.parseDouble(price.replaceAll("[^0-9]", ""));
-    		double pricePerPerson = priceVal / (beds + 1); // Because my Fiance and I share a room
-    		if (pricePerPerson >= 500) score -= 35;
-    		else if (pricePerPerson >= 475) score -= 30;
-    		else if (pricePerPerson >= 450) score -= 25;
-    		else if (pricePerPerson >= 425) score -= 20;
-    		else if (pricePerPerson >= 400) score -= 15;
-    		else if (pricePerPerson >= 375) score -= 10;
-    		else if (pricePerPerson >= 350) score -= 5;
-    		
-    	} catch (Exception e) { /* Ignore calculation errors */ }
-    	
-    	this.dealScore = Math.max(0, Math.min(100, score));
-    }
 
     /**
      * Helper method to format travel times to mm:ss format

@@ -1,0 +1,12 @@
+---
+description: Project context for StudentRentalsScraper
+alwaysApply: true
+---
+
+# StudentRentalsScraper – Cursor rule
+
+This project is a **Java 21** pipeline: **scrape → clean → (optional) geocode → (optional) APIs**. Entry point: `src/main/Orchestrator.java`; run mode is set there via the `RUN_MODE` constant.
+
+For full structure, pipeline stages, data model (Apartment, FeatureType, Flag), scraper/cleaner/geocoding/API behavior, config, and TODOs, read **CONTEXT.md** at the project root.
+
+Do not rely on README.md for accuracy; use CONTEXT.md and the code.

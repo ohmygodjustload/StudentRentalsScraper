@@ -165,6 +165,22 @@ public class DataCleaner {
 	
 	// TODO - normalize bed/bath formats using old StudentRentalsScraper method
 	private String normalizeBedBath(String rawBedBath) {
+		if (rawBedBath == null || rawBedBath.isBlank()) return "";
+
+		rawBedBath = rawBedBath.strip().toLowerCase();
+
+		String[] parts = rawBedBath.split("/");
+		if (parts.length != 2) return rawBedBath; // Unexpected format, return as-is
+
+		String bedPart = parts[0].strip();
+		String bathPart = parts[1].strip();
+		boolean isStudio = false;
+		double beds = Double.parseDouble(bedPart);
+		if (beds == 0 || bedPart.equalsIgnoreCase("studio")) {
+			isStudio = true;
+			beds = 1; // Treat studio as 1 bed for scoring purposes
+		}
+		
 		return rawBedBath; // Placeholder - implement normalization logic as needed
 	}
 
