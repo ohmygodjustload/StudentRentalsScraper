@@ -4,8 +4,8 @@
 # Log file
 *.log
 
-# Test files
-**/*test.java
+# Maven
+target/
 
 # Bin directory
 /bin/
@@ -17,9 +17,6 @@
 /tmp/
 *.tmp
 *.temp
-
-# Test files
-**/*Test.java
 
 # config directory and Properties files
 /config/

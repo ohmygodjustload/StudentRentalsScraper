@@ -34,37 +34,57 @@ The project is driven by the `Orchestrator` class, which executes a series of st
 
 ## Project Structure
 
--   `src/main/Orchestrator.java`: The main entry point that controls the data processing pipeline.
--   `src/scraper/StudentRentalsScraper.java`: Handles the core logic for fetching and parsing HTML from the target website.
--   `src/clean/DataCleaner.java`: Contains logic for normalizing and standardizing scraped data like addresses and landlord names.
--   `src/geocoding/DataMerger.java`: Merges the cleaned data with external geocoding information from a CSV file.
--   `src/api/`: Contains classes for interacting with external APIs (Travel Time, Walk Score, etc.).
--   `src/models/`: Defines data structures, including `Apartment`, `FeatureType`, and `Flag`.
--   `src/utils/`: Provides helper classes for JSON (`JsonUtils`) and CSV (`CsvUtils`) file operations.
+The project uses the standard Maven layout:
+
+-   `src/main/java/main/Orchestrator.java`: The main entry point that controls the data processing pipeline.
+-   `src/main/java/scraper/StudentRentalsScraper.java`: Handles the core logic for fetching and parsing HTML from the target website.
+-   `src/main/java/clean/DataCleaner.java`: Contains logic for normalizing and standardizing scraped data like addresses and landlord names.
+-   `src/main/java/geocoding/DataMerger.java`: Merges the cleaned data with external geocoding information from a CSV file.
+-   `src/main/java/api/`: Contains classes for interacting with external APIs (Travel Time, Walk Score, etc.).
+-   `src/main/java/models/`: Defines data structures, including `Apartment`, `FeatureType`, and `Flag`.
+-   `src/main/java/utils/`: Provides helper classes for JSON (`JsonUtils`) and CSV (`CsvUtils`) file operations.
+-   `src/test/java/`: JUnit 5 tests.
 -   `output/`: The default directory where all generated files are stored in their respective subdirectories (`Raw`, `Cleaned`, `Geocoded`, `API`, `Final`).
+
+## Prerequisites
+
+-   **Java 21**
+-   **Maven 3.6+**
+
+## Build and Test
+
+```bash
+# Compile
+mvn clean compile
+
+# Run tests
+mvn test
+
+# Package JAR (includes Main-Class in manifest)
+mvn package
+```
 
 ## How to Run
 
-The entire pipeline is controlled by the `Orchestrator` class. To run the application, configure the `RUN_MODE` static final variable inside `src/main/Orchestrator.java`.
+The entire pipeline is controlled by the `Orchestrator` class. Configure the `RUN_MODE` static final variable inside `src/main/java/main/Orchestrator.java` as needed.
 
 1.  **Clone the repository.**
-2.  **Create folder /config/ and add files CrimeData.properties, TravelTime.properties, and WalkScore.properties. These contain API keys**
-3.  **Open the project in your favorite Java IDE.**
-4.  **Navigate to `src/main/Orchestrator.java`.**
-5.  **Set the `RUN_MODE`**: Choose one of the available modes:
+2.  **Create folder `config/` and add files** `CrimeData.properties`, `TravelTime.properties`, and `WalkScore.properties` (these contain API keys).
+3.  **Run the application** (from the project root):
+    -   `mvn exec:java` — runs `main.Orchestrator` (main class is configured in `pom.xml`).
+    -   Or open the project in your IDE as a Maven project and run `main.Orchestrator`.
+4.  **Set the `RUN_MODE`** in `Orchestrator.java` before running. Available modes:
     -   `FULL_PIPELINE`: Executes all steps from scraping to final API enrichment.
     -   `SCRAPE_AND_CLEAN_ONLY`: Scrapes data and cleans it, then stops.
     -   `CLEAN_ONLY`: Loads the latest raw scraped JSON and runs the cleaning process.
     -   `GEOCODE_ONLY`: Loads the latest cleaned data and merges it with the geocoding CSV.
     -   `APIS_ONLY`: Loads the latest geocoded data and runs all API enrichment steps.
     -   `RESUME_FROM_CLEANED`: Skips scraping and starts from the geocoding step.
-6.  **(Optional) Configure the output directory**: Modify the `OUTPUT_DIR` constant in `Orchestrator.java` if you wish to save files to a different location.
-7.  **Run `Orchestrator.main()`.**
+5.  **(Optional) Configure the output directory**: Modify the `OUTPUT_DIR` constant in `Orchestrator.java` if you wish to save files to a different location.
 
 If running a mode that includes geocoding, the program will pause and prompt you to place the `geocodio.csv` file in the `output/Geocoded` directory before continuing.
 
 ### Dependencies
 
--   **Jsoup**: For parsing HTML.
--   **Jackson**: For JSON serialization and deserialization.
+Dependencies are managed by Maven; see `pom.xml`. They include Jsoup (HTML parsing), Jackson (JSON), OpenCSV, and JUnit 5 for tests.
 
