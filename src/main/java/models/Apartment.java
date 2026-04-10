@@ -1,12 +1,12 @@
 /**
  * Apartment.java
  * 
- * Description: An apartment class for holding the basic data such as the renter's name, 
+ * Description: A mutable apartment class for holding the basic data such as the renter's name, 
  * bed/bath info, price per month, and link to the listing
  * 
  * @author Andrew Peirce
  * 
- * Date Last Modified: 08/05/2025
+ * Date Last Modified: 04/09/2026
  * 
  */
 package models;
