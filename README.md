@@ -6,7 +6,14 @@ A Java data pipeline that scrapes rental listings from [studentrentalslacrosse.c
 
 ## Motivation
 
-The rental listing site for La Crosse, WI doesn't expose all of its listings through normal browsing. This tool iterates through listing IDs directly, captures every valid listing, and produces a structured dataset that can be filtered, sorted, and scored — something the site itself doesn't support.
+The site only shows listings that landlords are actively paying to advertise. But every past and future listing still exists in the system under a sequential ID — it just isn't surfaced.
+
+By iterating through all listing IDs directly (not just active ones), this tool captures two things the site intentionally hides:
+
+1. **Units not yet listed** — landlords who will have availability in the coming months but haven't started advertising yet
+2. **Inactive landlords** — property owners with no current listings who can be contacted directly before they start advertising
+
+The goal was to build a contact list of landlords to reach out to in early summer — weeks or months before the majority of students begin their search in late summer. The timing advantage is the point.
 
 ## Pipeline
 
