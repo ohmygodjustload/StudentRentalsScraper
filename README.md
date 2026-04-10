@@ -1,90 +1,113 @@
 # Student Rentals Scraper
 
-[![Ask DeepWiki](https://devin.ai/assets/askdeepwiki.png)](https://deepwiki.com/ohmygodjustload/StudentRentalsScraper)
+[![Java CI](https://github.com/ohmygodjustload/StudentRentalsScraper/actions/workflows/maven.yml/badge.svg)](https://github.com/ohmygodjustload/StudentRentalsScraper/actions/workflows/maven.yml)
 
-This repository contains a Java-based web scraper and data processing pipeline designed to extract, clean, and enrich rental listing information from `studentrentalslacrosse.com`. The tool automates the collection of apartment data, normalizes inconsistencies, and enhances it with external data sources like geocoding, travel times, and walk scores.
+A Java data pipeline that scrapes rental listings from [studentrentalslacrosse.com](https://www.studentrentalslacrosse.com), cleans and normalizes the data, and enriches it with geocoding and travel-time information — built to find deals that aren't surfaced by the site's own search.
 
-## Features
+## Motivation
 
-- **Web Scraping**: Scrapes rental listings, including details like price, address, landlord, bed/bath count, and amenities using Jsoup.
-- **Data Cleaning**: Implements a robust cleaning pipeline to normalize inconsistent data, such as landlord name variations and address formats.
-- **Modular Pipeline**: An orchestrator manages a multi-stage data processing pipeline, allowing for flexible execution of different stages (scraping, cleaning, geocoding, API enrichment).
-- **Data Enrichment**: Integrates with external services to add valuable context:
-    - **Geocoding**: Merges latitude/longitude data from Geocod.io.
-    - **Travel Time**: Calculates walk and bike travel times to a specified destination.
-    - **Walk Score**: Fetches Walk Score and Bike Score for each listing.
-- **Deal Scoring**: A basic scoring system evaluates listings based on factors like price-per-bedroom and data completeness.
-- **Persistent Outputs**: Saves data at various processing stages (raw, cleaned, geocoded, final) in both JSON and CSV formats.
+The rental listing site for La Crosse, WI doesn't expose all of its listings through normal browsing. This tool iterates through listing IDs directly, captures every valid listing, and produces a structured dataset that can be filtered, sorted, and scored — something the site itself doesn't support.
 
-## How It Works
+## Pipeline
 
-The project is driven by the `Orchestrator` class, which executes a series of steps to process the data.
+```
+Scrape ─► Raw JSON ─► Clean ─► Cleaned JSON + CSV ─► Geocode ─► API Enrichment ─► Final JSON
+```
 
-1.  **Scraping**: The `StudentRentalsScraper` iterates through listing IDs on `studentrentalslacrosse.com`, extracts raw data from valid listings, and saves the output to `output/Raw/listings_scraped_{timestamp}.json`.
+| Stage | What happens |
+|---|---|
+| **Scrape** | Iterates listing IDs 0–900 on the target site, extracts address, price, landlord, bed/bath, amenities, and flags missing data |
+| **Clean** | Normalizes addresses (expand abbreviations, correct known typos), maps landlord name variations to canonical names |
+| **Geocode** | Merges lat/long from a user-provided [Geocod.io](https://www.geocod.io/) CSV export |
+| **Enrich** | Adds walk and bike travel times to campus via the [TravelTime API](https://traveltime.com/) |
 
-2.  **Cleaning**: The `DataCleaner` processes the raw data, standardizing landlord names and addresses based on predefined mappings and rules. The cleaned data is saved to `output/Cleaned/listings_cleaned_{timestamp}.json` and `.csv`.
+Each stage saves its output independently, so you can resume from any point.
 
-3.  **Geocoding (Manual Step)**: The pipeline pauses, requiring the user to place an enhanced CSV from a service like Geocod.io (named `geocodio.csv`) into the `output/Geocoded` directory. The `DataMerger` then integrates this location data. The result is saved in `output/Geocoded/listings_geocoded_{timestamp}.json`.
+## Run Modes
 
-4.  **API Enrichment**: The orchestrator proceeds to call a series of external APIs to add more context to each listing:
-    - `TravelTimeAPI` adds walk and bike travel times.
-    - `WalkScoreAPI` adds Walk Score and Bike Score.
-    - `CrimeDataAPI` can be used to add local crime statistics.
-    Intermediate and final results are saved in `output/API` and `output/Final`.
+The pipeline is controlled by a `RUN_MODE` constant in `Orchestrator.java`:
+
+| Mode | Description |
+|---|---|
+| `FULL_PIPELINE` | Scrape through final enrichment |
+| `SCRAPE_AND_CLEAN_ONLY` | Scrape and clean, then stop |
+| `CLEAN_ONLY` | Re-clean the latest raw JSON |
+| `GEOCODE_ONLY` | Merge geocoding into the latest cleaned JSON |
+| `APIS_ONLY` | Run API enrichment on the latest geocoded JSON |
+| `RESUME_FROM_CLEANED` | Pick up from cleaning through final enrichment |
+
+## Tech Stack
+
+- **Java 21** with **Maven**
+- [Jsoup](https://jsoup.org/) — HTML parsing and scraping
+- [Jackson](https://github.com/FasterXML/jackson) — JSON serialization (including JSR-310 date support)
+- [OpenCSV](https://opencsv.sourceforge.net/) — CSV export
+- [JUnit 5](https://junit.org/junit5/) — testing
 
 ## Project Structure
 
-The project uses the standard Maven layout:
+```
+src/main/java/
+├── main/Orchestrator.java          Entry point; controls pipeline flow
+├── scraper/
+│   ├── ApartmentScraper.java       Scraper interface
+│   └── StudentRentalsScraper.java  Jsoup-based implementation
+├── clean/DataCleaner.java          Address and landlord normalization
+├── geocoding/DataMerger.java       Merges Geocod.io CSV data
+├── api/
+│   ├── TravelTimeAPI.java          Walk/bike travel times to campus
+│   ├── WalkScoreAPI.java           Walk Score integration (planned)
+│   └── CrimeDataAPI.java           Crime data integration (planned)
+├── models/
+│   ├── Apartment.java              Core data model
+│   ├── FeatureType.java            Enum for listing feature labels
+│   └── Flag.java                   Data-quality annotations
+└── utils/
+    ├── JsonUtils.java              JSON read/write helpers
+    └── CsvUtils.java               CSV export helpers
 
--   `src/main/java/main/Orchestrator.java`: The main entry point that controls the data processing pipeline.
--   `src/main/java/scraper/StudentRentalsScraper.java`: Handles the core logic for fetching and parsing HTML from the target website.
--   `src/main/java/clean/DataCleaner.java`: Contains logic for normalizing and standardizing scraped data like addresses and landlord names.
--   `src/main/java/geocoding/DataMerger.java`: Merges the cleaned data with external geocoding information from a CSV file.
--   `src/main/java/api/`: Contains classes for interacting with external APIs (Travel Time, Walk Score, etc.).
--   `src/main/java/models/`: Defines data structures, including `Apartment`, `FeatureType`, and `Flag`.
--   `src/main/java/utils/`: Provides helper classes for JSON (`JsonUtils`) and CSV (`CsvUtils`) file operations.
--   `src/test/java/`: JUnit 5 tests.
--   `output/`: The default directory where all generated files are stored in their respective subdirectories (`Raw`, `Cleaned`, `Geocoded`, `API`, `Final`).
-
-## Prerequisites
-
--   **Java 21**
--   **Maven 3.6+**
-
-## Build and Test
-
-```bash
-# Compile
-mvn clean compile
-
-# Run tests
-mvn test
-
-# Package JAR (includes Main-Class in manifest)
-mvn package
+output/
+├── Raw/        Unmodified scraper output
+├── Cleaned/    Normalized JSON + CSV
+├── Geocoded/   After geocoding merge
+├── API/        Intermediate API results
+└── Final/      Fully enriched output
 ```
 
-## How to Run
+## Getting Started
 
-The entire pipeline is controlled by the `Orchestrator` class. Configure the `RUN_MODE` static final variable inside `src/main/java/main/Orchestrator.java` as needed.
+### Prerequisites
 
-1.  **Clone the repository.**
-2.  **Create folder `config/` and add files** `CrimeData.properties`, `TravelTime.properties`, and `WalkScore.properties` (these contain API keys).
-3.  **Run the application** (from the project root):
-    -   `mvn exec:java` — runs `main.Orchestrator` (main class is configured in `pom.xml`).
-    -   Or open the project in your IDE as a Maven project and run `main.Orchestrator`.
-4.  **Set the `RUN_MODE`** in `Orchestrator.java` before running. Available modes:
-    -   `FULL_PIPELINE`: Executes all steps from scraping to final API enrichment.
-    -   `SCRAPE_AND_CLEAN_ONLY`: Scrapes data and cleans it, then stops.
-    -   `CLEAN_ONLY`: Loads the latest raw scraped JSON and runs the cleaning process.
-    -   `GEOCODE_ONLY`: Loads the latest cleaned data and merges it with the geocoding CSV.
-    -   `APIS_ONLY`: Loads the latest geocoded data and runs all API enrichment steps.
-    -   `RESUME_FROM_CLEANED`: Skips scraping and starts from the geocoding step.
-5.  **(Optional) Configure the output directory**: Modify the `OUTPUT_DIR` constant in `Orchestrator.java` if you wish to save files to a different location.
+- Java 21
+- Maven 3.6+
 
-If running a mode that includes geocoding, the program will pause and prompt you to place the `geocodio.csv` file in the `output/Geocoded` directory before continuing.
+### Build & Run
 
-### Dependencies
+```bash
+# Compile and run tests
+mvn clean verify
 
-Dependencies are managed by Maven; see `pom.xml`. They include Jsoup (HTML parsing), Jackson (JSON), OpenCSV, and JUnit 5 for tests.
+# Run the pipeline
+mvn exec:java
+```
 
+### API Keys (optional)
+
+For stages that call external APIs, create property files in `config/`:
+
+| File | Keys |
+|---|---|
+| `TravelTime.properties` | `api.key`, `api.id` |
+| `WalkScore.properties` | `api.key` |
+| `CrimeData.properties` | `api.key`, `api.ori` |
+
+See the `*_example.properties` files for the expected format. These files are gitignored.
+
+## Roadmap
+
+- [ ] Full bed/bath normalization (fractional values, studio detection)
+- [ ] Walk Score and crime data API integration
+- [ ] Deal scoring algorithm (price-per-bedroom, amenities, distance)
+- [ ] GUI with map view and rent-vs-distance scatter plot
+- [ ] SQLite/H2 persistence for historical price tracking
+- [ ] Change detection and alerting between scrapes
