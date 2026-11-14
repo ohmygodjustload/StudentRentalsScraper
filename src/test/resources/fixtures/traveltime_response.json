@@ -1,0 +1,16 @@
+{
+  "results": [
+    {
+      "search_id": "walking-to-campus",
+      "locations": [
+        {
+          "id": "101",
+          "properties": [
+            { "travel_time": 720 }
+          ]
+        }
+      ],
+      "unreachable": []
+    }
+  ]
+}

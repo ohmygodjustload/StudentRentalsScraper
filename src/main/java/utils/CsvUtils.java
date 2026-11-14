@@ -1,67 +1,71 @@
+/**
+ * CSV export helpers for apartment listings.
+ *
+ * @author Andrew Peirce
+ */
 package utils;
 
 import models.Apartment;
 import models.Flag;
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.List;
 import java.util.stream.Collectors;
 
-public class CsvUtils {
+import com.opencsv.CSVWriter;
 
-	public static void toCsv(List<Apartment> listings, String filePath) {
-        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(filePath))) {
-            // Header
-            writer.write("URL,Landlord,Bed/Bath,Address,Price,Amenities,DealScore,Flags");
-            writer.newLine();
-            
+public final class CsvUtils {
+
+    private CsvUtils() {
+    }
+
+    private static final String[] HEADER = {
+            "id", "url", "landlord", "bed_bath", "bedrooms", "bathrooms",
+            "address", "price", "rentMonthly", "available", "amenities", "flags",
+            "latitude", "longitude", "distanceToCampus",
+            "walkTravelTimeSeconds", "bikeTravelTimeSeconds",
+            "walkScore", "bikeScore"
+    };
+
+    public static void toCsv(List<Apartment> listings, String filePath) {
+        try (Writer writer = new FileWriter(filePath);
+             CSVWriter csv = new CSVWriter(writer)) {
+            csv.writeNext(HEADER);
             for (Apartment apt : listings) {
-                writer.write(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%.1f,\"%s\"",
-                        escape(apt.getURL()),
-                        escape(apt.getLandlord()),
-                        escape(apt.getBedBath()),
-                        escape(apt.getAddress()),
-                        escape(apt.getPrice()),
-                        escape(apt.getAmenities()),
-                        apt.getDealScore(),
-                        escape(apt.getFlags().stream()
-                                    .map(Flag::toString)
-                                    .collect(Collectors.joining(";")))
-                ));
-                writer.newLine();
+                csv.writeNext(new String[] {
+                        nullToEmpty(apt.getId()),
+                        nullToEmpty(apt.getUrl()),
+                        nullToEmpty(apt.getLandlord()),
+                        nullToEmpty(apt.getBedBath()),
+                        numberToString(apt.getBedrooms()),
+                        numberToString(apt.getBathrooms()),
+                        nullToEmpty(apt.getAddress()),
+                        nullToEmpty(apt.getPrice()),
+                        numberToString(apt.getRentMonthly()),
+                        nullToEmpty(apt.getAvailable()),
+                        nullToEmpty(apt.getAmenities()),
+                        apt.getFlags().stream().map(Flag::toString).collect(Collectors.joining(";")),
+                        numberToString(apt.getLatitude()),
+                        numberToString(apt.getLongitude()),
+                        numberToString(apt.getDistanceToCampus()),
+                        numberToString(apt.getWalkTravelTimeSeconds()),
+                        numberToString(apt.getBikeTravelTimeSeconds()),
+                        numberToString(apt.getWalkScore()),
+                        numberToString(apt.getBikeScore())
+                });
             }
-//            System.out.println("Saved " + listings.size() + " listings to CSV: " + filePath);
         } catch (IOException e) {
             throw new RuntimeException("Error writing CSV: " + e.getMessage(), e);
         }
     }
 
-    // TODO : Implement reading from CSV
-    // public static List<Apartment> fromCsv(String filePath) {
-    //     List<Apartment> listings = new ArrayList<>();
-    //     try (BufferedReader reader = Files.newBufferedReader(Paths.get(filePath))) {
-    //         String line = reader.readLine(); // Skip header
-    //         while ((line = reader.readLine()) != null) {
-    //             String[] tokens = parseCsvLine(line);
-    //             if (tokens.length < 8) continue; // Skip malformed lines
-                
-                
-    //             String[] flagTokens = unescape(tokens[7]).split(";");
-    //             Set<Flag> flags = Arrays.stream(flagTokens)
-    //                                     .map(String::trim)
-    //                                     .filter(s -> !s.isEmpty())
-    //                                     .map(Flag::valueOf)
-    //                                     .collect(Collectors.toSet());
-    //             apt.setFlags(flags);
-                
-    //             listings.add(apt);
-    //         }
-    // }
-
-
-	// Helper for escaping quotes in CSV
-    private static String escape(String s) {
-        return s == null ? "" : s.replace("\"", "\"\"");
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
+    private static String numberToString(Number value) {
+        return value == null ? "" : value.toString();
+    }
 }

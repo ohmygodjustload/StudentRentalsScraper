@@ -1,265 +1,313 @@
 /**
- * Apartment.java
- * 
- * Description: A mutable apartment class for holding the basic data such as the renter's name, 
- * bed/bath info, price per month, and link to the listing
- * 
+ * Mutable listing model used across scrape, clean, geocode, and API enrichment stages.
+ *
  * @author Andrew Peirce
- * 
- * Date Last Modified: 04/09/2026
- * 
  */
 package models;
-import java.util.List;
-import java.util.Map;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.List;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Apartment {
-	
-	// Core attributes (Added at instantiation)
-	private final String ID;
-	private final String URL;
-	
-	// Additional essential attributes (added after instantiation)
+
+    private final String id;
+    private final String url;
+
     private String address;
     private String price;
+    private Integer rentMonthly;
 
-    // TODO - remove this attribute and algoroithm and do it in a separate scorer class
-    private double dealScore; // Calculate with subjective scoring system
-    
-    // Feature Storage
-    private EnumMap<FeatureType, String> features = new EnumMap<>(FeatureType.class); // Map of all features found on listing page
-    private List<Flag> flags = new ArrayList<>(); // A list of potential issues with the listing (missing info, etc.)
+    private EnumMap<FeatureType, String> features = new EnumMap<>(FeatureType.class);
+    private List<Flag> flags = new ArrayList<>();
 
-    // Raw Scraped Attributes
-    @JsonIgnore
-    private String rawTitle; // the title of the listing used for fallback info (landlord, bed/bath) if missing from features
+    private String rawTitle;
 
-    // TODO - add numeric bed/bath attributes for better scoring and filtering (bedrooms, bathrooms)
-    private double bedrooms;
-    private double bathrooms;
-    
-    // Geocoding attributes
-    private double latitude;
-    private double longitude;
-    private double accuracy;
-    private String geocodioAddress; // Formatted address from Geocodio API
-    
-    // Attributes requiring geocoding
-    private double distanceToCampus;
-    
-    // Travel Time attributes (TravelTime API)
-    private int walkTravelTimeSeconds;
+    private Double bedrooms;
+    private Double bathrooms;
+
+    private Double latitude;
+    private Double longitude;
+    private Double accuracy;
+    private String geocodioAddress;
+    private Double distanceToCampus;
+
+    private Integer walkTravelTimeSeconds;
     private String walkTravelTimeFormatted;
-    private int bikeTravelTimeSeconds;
+    private Integer bikeTravelTimeSeconds;
     private String bikeTravelTimeFormatted;
-    
-    // Walk Score attributes (WalkScore API)
-    private int walkScore;
+
+    private Integer walkScore;
     private String walkScoreDescription;
-    private int bikeScore;
+    private Integer bikeScore;
     private String bikeScoreDescription;
-    
-    // Constructor
+
     @JsonCreator
     public Apartment(@JsonProperty("id") String id, @JsonProperty("url") String url) {
-        this.ID = id;
-        this.URL = url;
+        this.id = id;
+        this.url = url;
     }
 
-    // Core Setters
-    public void setPrice(String price) { this.price = price; }
-    public void setDealScore(double dealScore) { this.dealScore = dealScore; }
-    public void setAddress(String address) {this.address = address; }
-    public void setTitle(String title) { this.rawTitle = title; }
-    public void setBedrooms(double bedrooms) { this.bedrooms = bedrooms; }
-    public void setBathrooms(double bathrooms) { this.bathrooms = bathrooms; }
-    
-    // Feature management
-    public void setFeature(FeatureType type, String value) {
-    	features.put(type, value);
+    public void setPrice(String price) {
+        this.price = price;
     }
-    
+
+    public void setRentMonthly(Integer rentMonthly) {
+        this.rentMonthly = rentMonthly;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public void setRawTitle(String rawTitle) {
+        this.rawTitle = rawTitle;
+    }
+
+    public void setBedrooms(Double bedrooms) {
+        this.bedrooms = bedrooms;
+    }
+
+    public void setBathrooms(Double bathrooms) {
+        this.bathrooms = bathrooms;
+    }
+
+    public void setFeature(FeatureType type, String value) {
+        features.put(type, value);
+    }
+
     @JsonProperty("allFeatures")
     public void setAllFeatures(Map<FeatureType, String> features) {
-        this.features = new EnumMap<>(features);
+        this.features = features == null ? new EnumMap<>(FeatureType.class) : new EnumMap<>(features);
     }
-    
+
     @JsonProperty("landlord")
     public void setLandlord(String landlord) {
         setFeature(FeatureType.LANDLORD, landlord);
     }
-    
-    @JsonProperty("latitude")
-    public void setLatitude(double latitude) { this.latitude = latitude; }
-    
-    @JsonProperty("longitude")
-    public void setLongitude(double longitude) { this.longitude = longitude; }
-    
-    @JsonProperty("accuracy")
-    public void setAccuracy(double accuracy) { this.accuracy = accuracy; }
-    
-    @JsonProperty("geocodioAddress")
+
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
+    }
+
+    public void setAccuracy(Double accuracy) {
+        this.accuracy = accuracy;
+    }
+
     public void setGeocodioAddress(String geocodioAddress) {
-    	this.geocodioAddress = geocodioAddress;
+        this.geocodioAddress = geocodioAddress;
     }
-    
-    @JsonProperty("distanceToCampus")
-    public void setDistanceToCampus(double distance) { this.distanceToCampus = distance; }
-    
-    @JsonProperty("walkTravelTimeSeconds")
-    public void setTravelTimeSeconds(int seconds) {
-    	this.walkTravelTimeSeconds = seconds;
+
+    public void setDistanceToCampus(Double distance) {
+        this.distanceToCampus = distance;
     }
-    
-    @JsonProperty("walkTravelTimeFormatted")
-    public void setTravelTimeFormatted(int seconds) { 
-    	this.walkTravelTimeFormatted = formatTravelTime(seconds);
+
+    public void setWalkTravelTimeSeconds(Integer seconds) {
+        this.walkTravelTimeSeconds = seconds;
+        this.walkTravelTimeFormatted = seconds == null ? null : formatTravelTime(seconds);
     }
-    
-    @JsonProperty("bikeTravelTimeSeconds")
-    public void setBikeTravelTimeSeconds(int seconds) {
-    	this.bikeTravelTimeSeconds = seconds;
+
+    public void setWalkTravelTimeFormatted(String formatted) {
+        this.walkTravelTimeFormatted = formatted;
     }
-    
-    @JsonProperty("bikeTravelTimeFormatted")
-    public void setBikeTravelTimeFormatted(int seconds) {
-    	this.bikeTravelTimeFormatted = formatTravelTime(seconds);
+
+    public void setBikeTravelTimeSeconds(Integer seconds) {
+        this.bikeTravelTimeSeconds = seconds;
+        this.bikeTravelTimeFormatted = seconds == null ? null : formatTravelTime(seconds);
     }
-    
-    @JsonProperty("walkScore")
-    public void setWalkscore(int walkScore) {
-    	this.walkScore = walkScore;
+
+    public void setBikeTravelTimeFormatted(String formatted) {
+        this.bikeTravelTimeFormatted = formatted;
     }
-    
-    @JsonProperty("walkScoreDescription")
+
+    public void setWalkScore(Integer walkScore) {
+        this.walkScore = walkScore;
+    }
+
     public void setWalkScoreDescription(String walkScoreDescription) {
-    	this.walkScoreDescription = walkScoreDescription;
+        this.walkScoreDescription = walkScoreDescription;
     }
-    
-    @JsonProperty("bikeScore")
-    public void setBikescore(int bikeScore) {
-    	this.bikeScore = bikeScore;
+
+    public void setBikeScore(Integer bikeScore) {
+        this.bikeScore = bikeScore;
     }
-    
-    @JsonProperty("bikeScoreDescription")
+
     public void setBikeScoreDescription(String bikeScoreDescription) {
-    	this.bikeScoreDescription = bikeScoreDescription;
+        this.bikeScoreDescription = bikeScoreDescription;
     }
-    
+
     public String getFeature(FeatureType type) {
-    	return features.get(type);
+        return features.get(type);
     }
-    
+
     @JsonProperty("allFeatures")
     public Map<FeatureType, String> getAllFeatures() {
-    	return Collections.unmodifiableMap(features);
+        return Collections.unmodifiableMap(features);
     }
-    
-    // Convenience getters
+
     @JsonIgnore
     public String getLandlord() {
-    	return features.getOrDefault(FeatureType.LANDLORD, "n/a");
+        return features.getOrDefault(FeatureType.LANDLORD, "n/a");
     }
-    
+
     @JsonIgnore
     public String getBedBath() {
         return features.getOrDefault(FeatureType.BED_BATH, "n/a");
     }
 
-    @JsonIgnore
+    @JsonProperty("rawTitle")
     public String getRawTitle() {
-        return rawTitle != null ? rawTitle : "n/a";
+        return rawTitle;
     }
-    
+
     @JsonIgnore
     public String getAmenities() {
         return features.getOrDefault(FeatureType.INCLUDED, "n/a");
     }
-    
-    // Add a flag
-    public void addFlag(Flag flag) {
-    	if (!flags.contains(flag)) flags.add(flag);
+
+    @JsonIgnore
+    public String getAvailable() {
+        return features.getOrDefault(FeatureType.AVAILABLE, "n/a");
     }
-    
-    
-    // Getters
-    @JsonProperty("id")
-    public String getID() { return ID; }
-    
-    @JsonProperty("url")
-    public String getURL() { return URL; }
-    
-    @JsonProperty("address")
-    public String getAddress() {return address; }
-    
-    @JsonProperty("price")
-    public String getPrice() { return price; }
+
+    public void addFlag(Flag flag) {
+        if (!flags.contains(flag)) {
+            flags.add(flag);
+        }
+    }
 
     @JsonProperty("flags")
-    public List<Flag> getFlags() { return flags; }
-    
-    @JsonProperty("dealScore")
-    public double getDealScore() { return dealScore; }
-    
+    public void setFlags(List<Flag> flags) {
+        this.flags = flags == null ? new ArrayList<>() : new ArrayList<>(flags);
+    }
+
+    @JsonProperty("id")
+    public String getId() {
+        return id;
+    }
+
+    @JsonProperty("url")
+    public String getUrl() {
+        return url;
+    }
+
+    @JsonProperty("address")
+    public String getAddress() {
+        return address;
+    }
+
+    @JsonProperty("price")
+    public String getPrice() {
+        return price;
+    }
+
+    @JsonProperty("rentMonthly")
+    public Integer getRentMonthly() {
+        return rentMonthly;
+    }
+
+    @JsonProperty("flags")
+    public List<Flag> getFlags() {
+        return flags;
+    }
+
+    @JsonProperty("bedrooms")
+    public Double getBedrooms() {
+        return bedrooms;
+    }
+
+    @JsonProperty("bathrooms")
+    public Double getBathrooms() {
+        return bathrooms;
+    }
+
     @JsonProperty("latitude")
-    public double getLatitude() { return latitude; }
-    
+    public Double getLatitude() {
+        return latitude;
+    }
+
     @JsonProperty("longitude")
-    public double getLongitude() { return longitude; }
-    
+    public Double getLongitude() {
+        return longitude;
+    }
+
     @JsonProperty("accuracy")
-    public double getAccuracy() { return accuracy; }
-    
+    public Double getAccuracy() {
+        return accuracy;
+    }
+
     @JsonProperty("geocodioAddress")
-    public String getGeocodioAddress() { return geocodioAddress; }
-    
+    public String getGeocodioAddress() {
+        return geocodioAddress;
+    }
+
     @JsonProperty("distanceToCampus")
-    public double getDistanceToCampus() { return distanceToCampus; }
-    
+    public Double getDistanceToCampus() {
+        return distanceToCampus;
+    }
+
     @JsonProperty("walkTravelTimeSeconds")
-    public int getTravelTimeSeconds() { return walkTravelTimeSeconds; }
-    
+    public Integer getWalkTravelTimeSeconds() {
+        return walkTravelTimeSeconds;
+    }
+
     @JsonProperty("walkTravelTimeFormatted")
-    public String getTravelTimeFormatted() { return walkTravelTimeFormatted; }
-    
+    public String getWalkTravelTimeFormatted() {
+        return walkTravelTimeFormatted;
+    }
+
     @JsonProperty("bikeTravelTimeSeconds")
-    public int getBikeTravelTimeSeconds() { return bikeTravelTimeSeconds; }
-    
+    public Integer getBikeTravelTimeSeconds() {
+        return bikeTravelTimeSeconds;
+    }
+
     @JsonProperty("bikeTravelTimeFormatted")
-    public String getBikeTravelTimeFormatted() { return bikeTravelTimeFormatted; }
-    
+    public String getBikeTravelTimeFormatted() {
+        return bikeTravelTimeFormatted;
+    }
+
     @JsonProperty("walkScore")
-    public int getWalkScore() { return walkScore; }
-    
+    public Integer getWalkScore() {
+        return walkScore;
+    }
+
     @JsonProperty("walkScoreDescription")
-    public String getWalkScoreDescription() { return walkScoreDescription; }
-    
+    public String getWalkScoreDescription() {
+        return walkScoreDescription;
+    }
+
     @JsonProperty("bikeScore")
-    public int getBikeScore() { return bikeScore; }
-    
+    public Integer getBikeScore() {
+        return bikeScore;
+    }
+
     @JsonProperty("bikeScoreDescription")
-    public String getBikeScoreDescription() { return bikeScoreDescription; }
+    public String getBikeScoreDescription() {
+        return bikeScoreDescription;
+    }
 
-    /**
-     * Helper method to format travel times to mm:ss format
-     * 
-     * @param seconds The travel time in seconds
-     * @return Formatted travel time string in mm:ss format
-     */
-    private String formatTravelTime(int seconds) {
-    	return String.format("%02d:%02d", seconds / 60, seconds % 60);
-	}
+    public boolean hasCoordinates() {
+        return latitude != null && longitude != null;
+    }
 
-	@Override
+    private static String formatTravelTime(int seconds) {
+        return String.format("%02d:%02d", seconds / 60, seconds % 60);
+    }
+
+    @Override
     public String toString() {
-        return String.format("%s | %s | %s",
-        	this.getLandlord(), this.address, this.price);
+        return String.format("%s | %s | %s", getLandlord(), address, price);
     }
 }

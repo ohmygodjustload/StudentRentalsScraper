@@ -1,0 +1,3 @@
+URL,Geocodio Latitude,Geocodio Longitude,Geocodio Accuracy Score,Geocodio Address Line 1
+"https://example.com/1",43.8101,-91.2401,1.0,"100 Main St"
+"https://example.com/2",43.8202,-91.2502,0.9,"200 State St"

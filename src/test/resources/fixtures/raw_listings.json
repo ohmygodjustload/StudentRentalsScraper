@@ -1,0 +1,38 @@
+[
+  {
+    "id": "1",
+    "url": "https://example.com/1",
+    "address": "420 9th St N La Crosse",
+    "price": "$1,200",
+    "rawTitle": "Off-Campus La Crosse Inc - 2br/1ba - Available 8/1",
+    "allFeatures": {
+      "landlord": "Off-Campus La Crosse Inc",
+      "bed_bath": "2/1.5",
+      "included": "Water, Trash"
+    },
+    "flags": []
+  },
+  {
+    "id": "2",
+    "url": "https://example.com/2",
+    "address": "100 Main St La Crosse",
+    "price": "$800",
+    "rawTitle": "Favre Rentals LLC - Studio 1 bath - No Pets",
+    "allFeatures": {
+      "included": "Heat"
+    },
+    "flags": []
+  },
+  {
+    "id": "3",
+    "url": "https://example.com/3",
+    "address": "999 Nowhere Ave",
+    "price": "$1500",
+    "rawTitle": "Weird Listing Without Pattern",
+    "allFeatures": {
+      "landlord": "Sawyer Rentals",
+      "bed_bath": "1.75/1"
+    },
+    "flags": []
+  }
+]

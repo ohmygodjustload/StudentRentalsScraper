@@ -1,0 +1,9 @@
+{
+  "status": 1,
+  "walkscore": 78,
+  "description": "Very Walkable",
+  "bike": {
+    "score": 65,
+    "description": "Bikeable"
+  }
+}

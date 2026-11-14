@@ -18,67 +18,68 @@ The goal was to build a contact list of landlords to reach out to in early summe
 ## Pipeline
 
 ```
-Scrape ─► Raw JSON ─► Clean ─► Cleaned JSON + CSV ─► Geocode ─► API Enrichment ─► Final JSON
+Scrape ─► Raw JSON ─► PostProcess ─► Clean ─► Cleaned JSON + CSV
+       ─► Geocode ─► TravelTime / WalkScore ─► Final JSON + CSV
+       ↳ Crime report (agency-level, separate file)
 ```
 
 | Stage | What happens |
 |---|---|
-| **Scrape** | Iterates listing IDs 0–900 on the target site, extracts address, price, landlord, bed/bath, amenities, and flags missing data |
-| **Clean** | Normalizes addresses (expand abbreviations, correct known typos), maps landlord name variations to canonical names |
-| **Geocode** | Merges lat/long from a user-provided [Geocod.io](https://www.geocod.io/) CSV export |
-| **Enrich** | Adds walk and bike travel times to campus via the [TravelTime API](https://traveltime.com/) |
+| **Scrape** | Iterates listing IDs, extracts raw address, price, features, and page title |
+| **PostProcess** | Title fallbacks for missing landlord / bed-bath; quality flags |
+| **Clean** | Normalizes addresses, landlord names, bed/bath (`Xbd/Yba`), rent |
+| **Geocode** | Geocodio API (preferred) or manual Geocod.io CSV; distance to campus |
+| **Enrich** | Walk/bike travel times (TravelTime) and Walk Score |
+| **Crime** | FBI CDE agency stats written to `output/API/crime_report_*.json` |
 
 Each stage saves its output independently, so you can resume from any point.
 
 ## Run Modes
 
-The pipeline is controlled by a `RUN_MODE` constant in `Orchestrator.java`:
+```bash
+mvn clean verify
+mvn exec:java -Dexec.args="--help"
+mvn exec:java -Dexec.args="--mode=scrape-clean"
+mvn exec:java -Dexec.args="--mode=full --min-id=0 --max-id=25"
+mvn exec:java -Dexec.args="--mode=clean"
+mvn exec:java -Dexec.args="--mode=geocode"
+mvn exec:java -Dexec.args="--mode=apis"
+mvn exec:java -Dexec.args="--mode=resume"
+```
 
 | Mode | Description |
 |---|---|
-| `FULL_PIPELINE` | Scrape through final enrichment |
-| `SCRAPE_AND_CLEAN_ONLY` | Scrape and clean, then stop |
-| `CLEAN_ONLY` | Re-clean the latest raw JSON |
-| `GEOCODE_ONLY` | Merge geocoding into the latest cleaned JSON |
-| `APIS_ONLY` | Run API enrichment on the latest geocoded JSON |
-| `RESUME_FROM_CLEANED` | Pick up from cleaning through final enrichment |
+| `full` | Scrape through final enrichment |
+| `scrape-clean` | Scrape and clean, then stop (default) |
+| `clean` | Re-clean the latest raw JSON |
+| `geocode` | Geocode the latest cleaned JSON |
+| `apis` | Run API enrichment on the latest geocoded JSON |
+| `resume` | Geocode + APIs from latest cleaned JSON |
+
+Other flags: `--output-dir`, `--min-id`, `--max-id`, `--delay-ms`.
 
 ## Tech Stack
 
 - **Java 21** with **Maven**
 - [Jsoup](https://jsoup.org/) — HTML parsing and scraping
-- [Jackson](https://github.com/FasterXML/jackson) — JSON serialization (including JSR-310 date support)
-- [OpenCSV](https://opencsv.sourceforge.net/) — CSV export
+- [Jackson](https://github.com/FasterXML/jackson) — JSON serialization
+- [OpenCSV](https://opencsv.sourceforge.net/) — CSV export/import
 - [JUnit 5](https://junit.org/junit5/) — testing
 
 ## Project Structure
 
 ```
 src/main/java/
-├── main/Orchestrator.java          Entry point; controls pipeline flow
-├── scraper/
-│   ├── ApartmentScraper.java       Scraper interface
-│   └── StudentRentalsScraper.java  Jsoup-based implementation
-├── clean/DataCleaner.java          Address and landlord normalization
-├── geocoding/DataMerger.java       Merges Geocod.io CSV data
-├── api/
-│   ├── TravelTimeAPI.java          Walk/bike travel times to campus
-│   ├── WalkScoreAPI.java           Walk Score integration (planned)
-│   └── CrimeDataAPI.java           Crime data integration (planned)
-├── models/
-│   ├── Apartment.java              Core data model
-│   ├── FeatureType.java            Enum for listing feature labels
-│   └── Flag.java                   Data-quality annotations
-└── utils/
-    ├── JsonUtils.java              JSON read/write helpers
-    └── CsvUtils.java               CSV export helpers
+├── main/                 Orchestrator, PipelineOptions, OutputPaths
+├── scraper/              Raw-only scraper
+├── clean/                PostProcessor + DataCleaner
+├── geocoding/            DataMerger, GeoUtils
+├── api/                  Geocodio, TravelTime, WalkScore, CrimeData
+├── models/               Apartment, FeatureType, Flag
+└── utils/                JsonUtils, CsvUtils
 
-output/
-├── Raw/        Unmodified scraper output
-├── Cleaned/    Normalized JSON + CSV
-├── Geocoded/   After geocoding merge
-├── API/        Intermediate API results
-└── Final/      Fully enriched output
+tickets/                  Deferred work items
+output/                   Raw, Cleaned, Geocoded, API, Final
 ```
 
 ## Getting Started
@@ -88,33 +89,21 @@ output/
 - Java 21
 - Maven 3.6+
 
-### Build & Run
-
-```bash
-# Compile and run tests
-mvn clean verify
-
-# Run the pipeline
-mvn exec:java
-```
-
 ### API Keys (optional)
 
-For stages that call external APIs, create property files in `config/`:
+Create property files in `config/` (gitignored). Environment variables override file values.
 
-| File | Keys |
-|---|---|
-| `TravelTime.properties` | `api.key`, `api.id` |
-| `WalkScore.properties` | `api.key` |
-| `CrimeData.properties` | `api.key`, `api.ori` |
+| File | Keys | Env overrides |
+|---|---|---|
+| `TravelTime.properties` | `api.key`, `api.id` | `TRAVELTIME_API_KEY`, `TRAVELTIME_API_ID` |
+| `WalkScore.properties` | `api.key` | `WALKSCORE_API_KEY` |
+| `Geocodio.properties` | `api.key` | `GEOCODIO_API_KEY` |
+| `CrimeData.properties` | `api.key`, `api.ori` | `CRIMEDATA_API_KEY`, `CRIMEDATA_API_ORI` |
 
-See the `*_example.properties` files for the expected format. These files are gitignored.
+See the `*_example.properties` files for the expected format. Missing keys skip that stage.
+
+Without a Geocodio key, geocoding pauses so you can place a Geocod.io CSV at `output/Geocoded/geocodio.csv`.
 
 ## Roadmap
 
-- [ ] Full bed/bath normalization (fractional values, studio detection)
-- [ ] Walk Score and crime data API integration
-- [ ] Deal scoring algorithm (price-per-bedroom, amenities, distance)
-- [ ] GUI with map view and rent-vs-distance scatter plot
-- [ ] SQLite/H2 persistence for historical price tracking
-- [ ] Change detection and alerting between scrapes
+Open tickets live in [`tickets/`](tickets/README.md), including deal scoring, API caching, logging, persistence, and change detection.

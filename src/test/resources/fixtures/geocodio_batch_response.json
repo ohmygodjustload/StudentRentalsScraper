@@ -1,0 +1,19 @@
+{
+  "results": [
+    {
+      "query": "100 Main St La Crosse WI",
+      "response": {
+        "results": [
+          {
+            "accuracy": 1.0,
+            "formatted_address": "100 Main St, La Crosse, WI 54601",
+            "location": {
+              "lat": 43.81,
+              "lng": -91.24
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

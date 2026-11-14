@@ -18,12 +18,9 @@ target/
 *.tmp
 *.temp
 
-# config directory and Properties files
-/config/
-*.properties
-
-# API Classes (for now)
-#**/*API.java
+# Config directory: ignore real keys, keep examples
+/config/*
+!/config/*_example.properties
 
 *.ctxt
 

@@ -1,12 +1,7 @@
----
-description: Project context for StudentRentalsScraper
-alwaysApply: true
----
-
 # StudentRentalsScraper – Cursor rule
 
-This project is a **Java 21** pipeline: **scrape → clean → (optional) geocode → (optional) APIs**. Entry point: `src/main/Orchestrator.java`; run mode is set there via the `RUN_MODE` constant.
+This project is a **Java 21 / Maven** pipeline: **scrape → post-process → clean → (optional) geocode → (optional) APIs**. Entry point: `src/main/java/main/Orchestrator.java`. Run mode is chosen via CLI (`--mode=...`), with defaults in `src/main/resources/pipeline.properties`.
 
-For full structure, pipeline stages, data model (Apartment, FeatureType, Flag), scraper/cleaner/geocoding/API behavior, config, and TODOs, read **CONTEXT.md** at the project root.
+For full structure, pipeline stages, data model (Apartment, FeatureType, Flag), scraper/cleaner/geocoding/API behavior, config, and open work, read **CONTEXT.md** at the project root and **tickets/** for deferred items.
 
-Do not rely on README.md for accuracy; use CONTEXT.md and the code.
+Do not rely on README.md alone for accuracy; use CONTEXT.md and the code.
