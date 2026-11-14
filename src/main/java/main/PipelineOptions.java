@@ -8,6 +8,8 @@ package main;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -19,7 +21,9 @@ public final class PipelineOptions {
         CLEAN_ONLY("clean"),
         GEOCODE_ONLY("geocode"),
         APIS_ONLY("apis"),
-        RESUME_FROM_CLEANED("resume");
+        RESUME_FROM_CLEANED("resume"),
+        STATUS("status"),
+        HELP("help");
 
         private final String cliName;
 
@@ -31,6 +35,10 @@ public final class PipelineOptions {
             return cliName;
         }
 
+        public boolean isPipelineMode() {
+            return this != STATUS && this != HELP;
+        }
+
         public static Mode fromCli(String value) {
             String normalized = value.trim().toLowerCase(Locale.ROOT);
             for (Mode mode : values()) {
@@ -39,7 +47,36 @@ public final class PipelineOptions {
                 }
             }
             throw new IllegalArgumentException(
-                    "Unknown mode: " + value + ". Expected one of: full, scrape-clean, clean, geocode, apis, resume");
+                    "Unknown command: " + value
+                            + ". Expected one of: full, scrape-clean, clean, geocode, apis, resume, status, help");
+        }
+    }
+
+    public enum GeocoderChoice {
+        AUTO("auto"),
+        CENSUS("census"),
+        GEOCODIO("geocodio"),
+        CSV("csv");
+
+        private final String cliName;
+
+        GeocoderChoice(String cliName) {
+            this.cliName = cliName;
+        }
+
+        public String getCliName() {
+            return cliName;
+        }
+
+        public static GeocoderChoice fromCli(String value) {
+            String normalized = value.trim().toLowerCase(Locale.ROOT);
+            for (GeocoderChoice choice : values()) {
+                if (choice.cliName.equals(normalized)) {
+                    return choice;
+                }
+            }
+            throw new IllegalArgumentException(
+                    "Unknown geocoder: " + value + ". Expected one of: auto, census, geocodio, csv");
         }
     }
 
@@ -52,7 +89,10 @@ public final class PipelineOptions {
     private final double campusLng;
     private final int travelTimeMaxSeconds;
     private final int travelTimeArrivalHour;
+    private final GeocoderChoice geocoder;
     private final boolean helpRequested;
+    private final boolean noArgs;
+    private final String helpTopic;
 
     private PipelineOptions(
             Mode mode,
@@ -64,7 +104,10 @@ public final class PipelineOptions {
             double campusLng,
             int travelTimeMaxSeconds,
             int travelTimeArrivalHour,
-            boolean helpRequested) {
+            GeocoderChoice geocoder,
+            boolean helpRequested,
+            boolean noArgs,
+            String helpTopic) {
         this.mode = mode;
         this.outputDir = outputDir;
         this.minId = minId;
@@ -74,12 +117,18 @@ public final class PipelineOptions {
         this.campusLng = campusLng;
         this.travelTimeMaxSeconds = travelTimeMaxSeconds;
         this.travelTimeArrivalHour = travelTimeArrivalHour;
+        this.geocoder = geocoder;
         this.helpRequested = helpRequested;
+        this.noArgs = noArgs;
+        this.helpTopic = helpTopic;
     }
 
     public static PipelineOptions parse(String[] args) {
-        Properties defaults = loadDefaults();
+        if (args == null || args.length == 0) {
+            return defaultsWithNoArgs();
+        }
 
+        Properties defaults = loadDefaults();
         Mode mode = Mode.SCRAPE_AND_CLEAN_ONLY;
         Path outputDir = Path.of(defaults.getProperty("output.dir", "output"));
         int minId = Integer.parseInt(defaults.getProperty("scraper.minId", "0"));
@@ -89,15 +138,20 @@ public final class PipelineOptions {
         double campusLng = Double.parseDouble(defaults.getProperty("campus.lng", "-91.2311481387267"));
         int travelTimeMaxSeconds = Integer.parseInt(defaults.getProperty("traveltime.maxSeconds", "900"));
         int travelTimeArrivalHour = Integer.parseInt(defaults.getProperty("traveltime.arrivalHour", "8"));
+        GeocoderChoice geocoder = GeocoderChoice.AUTO;
         boolean helpRequested = false;
+        String helpTopic = null;
+        boolean modeSet = false;
 
+        List<String> positionals = new ArrayList<>();
         for (String arg : args) {
             if ("--help".equals(arg) || "-h".equals(arg)) {
                 helpRequested = true;
                 continue;
             }
             if (!arg.startsWith("--")) {
-                throw new IllegalArgumentException("Unexpected argument: " + arg);
+                positionals.add(arg);
+                continue;
             }
 
             String[] parts = arg.substring(2).split("=", 2);
@@ -108,16 +162,42 @@ public final class PipelineOptions {
             }
 
             switch (key) {
-                case "mode" -> mode = Mode.fromCli(value);
+                case "mode" -> {
+                    mode = Mode.fromCli(value);
+                    modeSet = true;
+                }
                 case "output-dir" -> outputDir = Path.of(value);
                 case "min-id" -> minId = Integer.parseInt(value);
                 case "max-id" -> maxId = Integer.parseInt(value);
                 case "delay-ms" -> delayMs = Integer.parseInt(value);
                 case "campus-lat" -> campusLat = Double.parseDouble(value);
                 case "campus-lng" -> campusLng = Double.parseDouble(value);
+                case "geocoder" -> geocoder = GeocoderChoice.fromCli(value);
                 case "help" -> helpRequested = true;
                 default -> throw new IllegalArgumentException("Unknown option: --" + key);
             }
+        }
+
+        if (!positionals.isEmpty()) {
+            mode = Mode.fromCli(positionals.get(0));
+            modeSet = true;
+            if (mode == Mode.HELP) {
+                helpRequested = true;
+                if (positionals.size() > 1) {
+                    helpTopic = positionals.get(1);
+                }
+            } else if (positionals.size() > 1) {
+                throw new IllegalArgumentException("Unexpected argument: " + positionals.get(1));
+            }
+        }
+
+        if (!modeSet && !helpRequested) {
+            // Flags only, no command — treat like scrape-clean for backward compatibility with --mode.
+            mode = Mode.SCRAPE_AND_CLEAN_ONLY;
+        }
+
+        if (helpRequested && mode != Mode.HELP) {
+            mode = Mode.HELP;
         }
 
         if (minId < 0 || maxId < minId) {
@@ -137,27 +217,55 @@ public final class PipelineOptions {
                 campusLng,
                 travelTimeMaxSeconds,
                 travelTimeArrivalHour,
-                helpRequested);
+                geocoder,
+                helpRequested,
+                false,
+                helpTopic);
+    }
+
+    private static PipelineOptions defaultsWithNoArgs() {
+        Properties defaults = loadDefaults();
+        return new PipelineOptions(
+                Mode.HELP,
+                Path.of(defaults.getProperty("output.dir", "output")).toAbsolutePath().normalize(),
+                Integer.parseInt(defaults.getProperty("scraper.minId", "0")),
+                Integer.parseInt(defaults.getProperty("scraper.maxId", "900")),
+                Integer.parseInt(defaults.getProperty("scraper.delayMs", "1000")),
+                Double.parseDouble(defaults.getProperty("campus.lat", "43.81610373619651")),
+                Double.parseDouble(defaults.getProperty("campus.lng", "-91.2311481387267")),
+                Integer.parseInt(defaults.getProperty("traveltime.maxSeconds", "900")),
+                Integer.parseInt(defaults.getProperty("traveltime.arrivalHour", "8")),
+                GeocoderChoice.AUTO,
+                false,
+                true,
+                null);
+    }
+
+    /**
+     * Rebuild options with a selected command and optional ID overrides (used by the menu).
+     */
+    public PipelineOptions withCommand(Mode mode, Integer minIdOverride, Integer maxIdOverride) {
+        return new PipelineOptions(
+                mode,
+                outputDir,
+                minIdOverride != null ? minIdOverride : minId,
+                maxIdOverride != null ? maxIdOverride : maxId,
+                delayMs,
+                campusLat,
+                campusLng,
+                travelTimeMaxSeconds,
+                travelTimeArrivalHour,
+                geocoder,
+                mode == Mode.HELP,
+                false,
+                null);
     }
 
     public static String helpText() {
-        return """
-                StudentRentalsScraper pipeline
-
-                Usage: mvn exec:java -Dexec.args="[options]"
-
-                Options:
-                  --mode=<mode>       full | scrape-clean | clean | geocode | apis | resume
-                                      (default: scrape-clean)
-                  --output-dir=<path> Output root directory (default: output)
-                  --min-id=<n>        First listing ID to scrape (default: 0)
-                  --max-id=<n>        Last listing ID to scrape (default: 900)
-                  --delay-ms=<n>      Delay between scrape requests in ms (default: 1000)
-                  --help              Show this help
-                """;
+        return CliHelp.overview();
     }
 
-    private static Properties loadDefaults() {
+    static Properties loadDefaults() {
         Properties props = new Properties();
         try (InputStream in = PipelineOptions.class.getClassLoader().getResourceAsStream("pipeline.properties")) {
             if (in != null) {
@@ -205,7 +313,19 @@ public final class PipelineOptions {
         return travelTimeArrivalHour;
     }
 
+    public GeocoderChoice getGeocoder() {
+        return geocoder;
+    }
+
     public boolean isHelpRequested() {
-        return helpRequested;
+        return helpRequested || mode == Mode.HELP;
+    }
+
+    public boolean isNoArgs() {
+        return noArgs;
+    }
+
+    public String getHelpTopic() {
+        return helpTopic;
     }
 }

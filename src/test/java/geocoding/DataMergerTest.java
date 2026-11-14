@@ -30,7 +30,7 @@ class DataMergerTest {
         assertEquals(43.8101, a1.getLatitude());
         assertEquals(-91.2401, a1.getLongitude());
         assertEquals(1.0, a1.getAccuracy());
-        assertEquals("100 Main St", a1.getGeocodioAddress());
+        assertEquals("100 Main St", a1.getGeocodedAddress());
 
         assertEquals(43.8202, a2.getLatitude());
         assertNull(a3.getLatitude());

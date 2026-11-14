@@ -6,7 +6,7 @@ This document is the single source of truth for AI tools and contributors. It is
 
 ## Purpose
 
-Scrapes rental listings from studentrentalslacrosse.com (La Crosse area), cleans and normalizes them, optionally geocodes and enriches via external APIs, and outputs JSON and CSV. Target: finding and comparing student rentals.
+Scrapes rental listings from studentrentalslacrosse.com (La Crosse area), cleans and normalizes them, geocodes and enriches via external APIs, and outputs JSON and CSV. Target: building a landlord contact list from listings that may not appear in the site’s public index. Strategy details: [docs/BACKGROUND.md](docs/BACKGROUND.md).
 
 ---
 
@@ -14,7 +14,8 @@ Scrapes rental listings from studentrentalslacrosse.com (La Crosse area), cleans
 
 - **Java 21** with **Maven** (`pom.xml`).
 - **Libraries:** Jsoup, Jackson (databind + jsr310), OpenCSV, JUnit 5.
-- Entry point: `main.Orchestrator` (`mvn exec:java`).
+- Entry point: `main.Orchestrator`.
+- Launchers: `srs.ps1` / `srs.sh` → `java -jar target/scraper-all.jar` (shaded via `maven-shade-plugin`).
 
 ---
 
@@ -23,49 +24,56 @@ Scrapes rental listings from studentrentalslacrosse.com (La Crosse area), cleans
 | Path | Role |
 |------|------|
 | `src/main/java/main/Orchestrator.java` | Entry point; CLI-driven pipeline. |
-| `src/main/java/main/PipelineOptions.java` | CLI + `pipeline.properties` defaults. |
+| `src/main/java/main/PipelineOptions.java` | Positional commands + flags; `pipeline.properties` defaults. |
+| `src/main/java/main/CliHelp.java` | Built-in help overview and per-command help. |
+| `src/main/java/main/InteractiveMenu.java` | Numbered menu when launched with no args. |
+| `src/main/java/main/StatusCommand.java` | Latest outputs, keys, next-step suggestion. |
 | `src/main/java/main/OutputPaths.java` | Timestamped output paths. |
-| `src/main/java/scraper/` | `ApartmentScraper` + `StudentRentalsScraper` (raw extraction only). |
-| `src/main/java/clean/` | `ApartmentPostProcessor` (title fallbacks) + `DataCleaner` (normalization). |
-| `src/main/java/geocoding/` | `GeocodioAPI` path via `api/GeocodioAPI`; `DataMerger` for CSV fallback; `GeoUtils`. |
-| `src/main/java/api/` | TravelTime, WalkScore, CrimeData, Geocodio, HttpTransport, ApiConfig. |
-| `src/main/java/models/` | Apartment, FeatureType, Flag. |
-| `src/main/java/utils/` | JsonUtils, CsvUtils. |
-| `src/main/resources/pipeline.properties` | Default output dir, ID range, delay, campus coords. |
-| `config/*_example.properties` | Example API key files (real keys gitignored). |
+| `src/main/java/scraper/` | Raw extraction only. |
+| `src/main/java/clean/` | Title fallbacks + normalization. |
+| `src/main/java/geocoding/` | CSV merger fallback; `GeoUtils`. |
+| `src/main/java/api/` | CensusGeocoder, Geocodio, TravelTime, WalkScore, CrimeData, HttpTransport, ApiConfig. |
+| `src/main/resources/pipeline.properties` | Defaults (output dir, ID range, delay, campus coords). |
+| `docs/CLI.md` | Full CLI reference. |
+| `docs/BACKGROUND.md` | Why the scraper indexes unlisted pages. |
 | `tickets/` | Open work items (former TODOs). |
 | `output/` | Raw, Cleaned, Geocoded, API, Final. |
 
 ---
 
-## Pipeline and run modes
+## Pipeline and commands
 
 ```
 Scrape → Raw JSON → PostProcess → Clean → Cleaned JSON+CSV
-  → Geocode (API or manual CSV) → distanceToCampus
+  → Geocode (Census default / Geocodio if keyed / CSV) → distanceToCampus
   → TravelTime → WalkScore → Final JSON+CSV
   ↳ CrimeData writes a separate crime_report JSON
 ```
 
-Run via CLI (defaults from `pipeline.properties`):
-
-```bash
-mvn exec:java -Dexec.args="--mode=scrape-clean"
-mvn exec:java -Dexec.args="--mode=full --min-id=0 --max-id=25"
+```powershell
+.\srs.ps1 <command> [options]
+.\srs.ps1                  # interactive menu
 ```
 
-| Mode | CLI value | Behavior |
-|------|-----------|----------|
-| Full pipeline | `full` | Scrape → clean → geocode → APIs → final |
-| Scrape + clean | `scrape-clean` | Scrape → clean → exit (default) |
-| Clean only | `clean` | Load latest raw JSON → post-process → clean |
-| Geocode only | `geocode` | Load latest cleaned → geocode |
-| APIs only | `apis` | Load latest geocoded → enrich |
-| Resume | `resume` | Load latest cleaned → geocode → enrich |
+| Command | Behavior |
+|---------|----------|
+| `full` | Scrape → clean → geocode → APIs → final |
+| `scrape-clean` | Scrape → clean → exit |
+| `clean` | Load latest raw → post-process → clean |
+| `geocode` | Load latest cleaned → geocode |
+| `apis` | Load latest geocoded → enrich |
+| `resume` | Load latest cleaned → geocode → enrich |
+| `status` | Latest files + keys + next step |
+| `help [cmd]` | Built-in help |
 
-Other flags: `--output-dir`, `--min-id`, `--max-id`, `--delay-ms`, `--help`.
+Flags: `--min-id`, `--max-id`, `--delay-ms`, `--output-dir`, `--geocoder=auto|census|geocodio|csv`, `--mode=` (legacy), `--help`.
 
-Output directory is relative (`output` by default). Geocoding uses Geocodio API when `config/Geocodio.properties` (or `GEOCODIO_API_KEY`) is present; otherwise the pipeline pauses for a manual `output/Geocoded/geocodio.csv`.
+### Geocoder selection (`--geocoder`, default `auto`)
+
+- `auto`: Geocodio if key present, otherwise US Census (no key).
+- `census`: always Census batch geocoder.
+- `geocodio`: require Geocodio key.
+- `csv`: interactive pause for `output/Geocoded/geocodio.csv` only.
 
 ---
 
@@ -74,37 +82,33 @@ Output directory is relative (`output` by default). Geocoding uses Geocodio API 
 ### Apartment
 
 - Immutable: `id`, `url`.
-- Core: `address`, `price`, `rentMonthly` (parsed int).
-- Features: `EnumMap<FeatureType, String>`.
-- Flags: `List<Flag>`.
-- `rawTitle` (serialized in raw JSON for re-runnable fallbacks).
-- Numeric: `bedrooms`, `bathrooms` (Double).
-- Geocoding: `latitude`, `longitude`, `accuracy`, `geocodioAddress`, `distanceToCampus`.
+- Core: `address`, `price`, `rentMonthly`.
+- Features / flags / `rawTitle`.
+- Numeric: `bedrooms`, `bathrooms`.
+- Geocoding: `latitude`, `longitude`, `accuracy`, `geocodedAddress` (JSON alias `geocodioAddress` for old files), `distanceToCampus`.
 - TravelTime / WalkScore enrichment fields (nullable boxed types).
 
-### FeatureType / Flag
+### Flags
 
-See `models/FeatureType` and `models/Flag`. Flags include title-fallback markers plus cleaner flags (`STUDIO`, `FRACTIONAL_*`, `BEDBATH_UNPARSEABLE`, `UNUSUAL_BEDROOM_COUNT`).
+Includes title-fallback and cleaner flags, plus `GEOCODE_APPROXIMATE` and `GEOCODE_NO_MATCH` from Census.
 
 ---
 
 ## Stage behavior
 
-- **Scraper:** Raw HTML extraction only; stores `rawTitle`; no normalization.
-- **PostProcessor:** Title fallback for missing landlord / bed-bath; sets flags. No-ops when `rawTitle` is absent (legacy raw files).
-- **Cleaner:** Address corrections, landlord map, bed/bath → `Xbd/Yba` or `Studio/Yba`, numeric beds/baths, rent parsing.
-- **Geocode:** Geocodio batch API or CSV merge; then haversine `distanceToCampus`.
-- **TravelTime:** Walk + bike time-filter to campus; skips ungeocoded listings.
-- **WalkScore:** Per-listing walk/bike scores.
-- **CrimeData:** Agency-level FBI CDE report to `output/API/crime_report_*.json` (not per listing).
+- **Scraper:** Raw HTML only; stores `rawTitle`.
+- **PostProcessor:** Title fallback for missing landlord / bed-bath.
+- **Cleaner:** Address, landlord, bed/bath → `Xbd/Yba` or `Studio/Yba`, rent parsing.
+- **Geocode:** Census batch (default), optional Geocodio, or CSV; then haversine `distanceToCampus`.
+- **TravelTime / WalkScore / CrimeData:** as before; missing keys skip with a warning.
 
 ---
 
 ## Config and secrets
 
 - Real `config/*.properties` are gitignored; `*_example.properties` are tracked.
-- Env vars override file values: `TRAVELTIME_API_KEY`, `TRAVELTIME_API_ID`, `WALKSCORE_API_KEY`, `GEOCODIO_API_KEY`, `CRIMEDATA_API_KEY`, `CRIMEDATA_API_ORI`.
-- Missing credentials skip that stage with a warning.
+- Env vars override file values (`TRAVELTIME_API_KEY`, etc.).
+- Geocodio is optional. Census needs no key.
 
 ---
 

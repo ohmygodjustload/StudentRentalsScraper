@@ -26,6 +26,6 @@ class GeocodioAPITest {
         assertEquals(43.81, apt.getLatitude());
         assertEquals(-91.24, apt.getLongitude());
         assertEquals(1.0, apt.getAccuracy());
-        assertEquals("100 Main St, La Crosse, WI 54601", apt.getGeocodioAddress());
+        assertEquals("100 Main St, La Crosse, WI 54601", apt.getGeocodedAddress());
     }
 }

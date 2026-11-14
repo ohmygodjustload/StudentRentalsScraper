@@ -7,35 +7,48 @@ import static org.junit.jupiter.api.Assertions.*;
 class PipelineOptionsTest {
 
     @Test
-    void defaults_to_scrape_clean_mode() {
+    void no_args_sets_noArgs_flag() {
         PipelineOptions options = PipelineOptions.parse(new String[0]);
-        assertEquals(PipelineOptions.Mode.SCRAPE_AND_CLEAN_ONLY, options.getMode());
-        assertEquals(0, options.getMinId());
-        assertEquals(900, options.getMaxId());
-        assertEquals(1000, options.getDelayMs());
-        assertFalse(options.isHelpRequested());
+        assertTrue(options.isNoArgs());
+        assertEquals(PipelineOptions.Mode.HELP, options.getMode());
     }
 
     @Test
-    void parses_cli_overrides() {
+    void parses_positional_command() {
         PipelineOptions options = PipelineOptions.parse(new String[] {
-                "--mode=full",
+                "full",
                 "--min-id=10",
                 "--max-id=25",
                 "--delay-ms=50",
-                "--output-dir=tmp-out"
+                "--geocoder=census"
         });
         assertEquals(PipelineOptions.Mode.FULL_PIPELINE, options.getMode());
         assertEquals(10, options.getMinId());
         assertEquals(25, options.getMaxId());
         assertEquals(50, options.getDelayMs());
-        assertTrue(options.getOutputDir().toString().replace('\\', '/').endsWith("tmp-out"));
+        assertEquals(PipelineOptions.GeocoderChoice.CENSUS, options.getGeocoder());
+        assertFalse(options.isNoArgs());
+    }
+
+    @Test
+    void mode_flag_still_works() {
+        PipelineOptions options = PipelineOptions.parse(new String[] {"--mode=geocode"});
+        assertEquals(PipelineOptions.Mode.GEOCODE_ONLY, options.getMode());
+    }
+
+    @Test
+    void help_command_with_topic() {
+        PipelineOptions options = PipelineOptions.parse(new String[] {"help", "full"});
+        assertEquals(PipelineOptions.Mode.HELP, options.getMode());
+        assertTrue(options.isHelpRequested());
+        assertEquals("full", options.getHelpTopic());
     }
 
     @Test
     void help_flag() {
         PipelineOptions options = PipelineOptions.parse(new String[] {"--help"});
         assertTrue(options.isHelpRequested());
+        assertEquals(PipelineOptions.Mode.HELP, options.getMode());
     }
 
     @Test
@@ -45,9 +58,21 @@ class PipelineOptionsTest {
     }
 
     @Test
+    void rejects_invalid_geocoder() {
+        assertThrows(IllegalArgumentException.class,
+                () -> PipelineOptions.parse(new String[] {"geocode", "--geocoder=bing"}));
+    }
+
+    @Test
     void rejects_invalid_range() {
         assertThrows(IllegalArgumentException.class,
-                () -> PipelineOptions.parse(new String[] {"--min-id=10", "--max-id=5"}));
+                () -> PipelineOptions.parse(new String[] {"scrape-clean", "--min-id=10", "--max-id=5"}));
+    }
+
+    @Test
+    void status_command() {
+        PipelineOptions options = PipelineOptions.parse(new String[] {"status"});
+        assertEquals(PipelineOptions.Mode.STATUS, options.getMode());
     }
 
     @Test

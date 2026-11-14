@@ -57,7 +57,7 @@ public class DataMerger {
                 setDouble(apt, cell(values, accuracyIndex), apt::setAccuracy);
                 String address = cell(values, addressIndex);
                 if (!address.isBlank()) {
-                    apt.setGeocodioAddress(address);
+                    apt.setGeocodedAddress(address);
                 }
             }
         } catch (CsvValidationException e) {

@@ -46,7 +46,7 @@ class JsonUtilsTest {
         apt.setLatitude(43.81);
         apt.setLongitude(-91.23);
         apt.setAccuracy(1.0);
-        apt.setGeocodioAddress("100 Main St");
+        apt.setGeocodedAddress("100 Main St");
         apt.setDistanceToCampus(0.5);
         apt.setWalkTravelTimeSeconds(720);
         apt.setBikeTravelTimeSeconds(300);

@@ -17,7 +17,9 @@ public enum Flag {
     FRACTIONAL_BEDROOM,
     FRACTIONAL_BATHROOM,
     BEDBATH_UNPARSEABLE,
-    UNUSUAL_BEDROOM_COUNT;
+    UNUSUAL_BEDROOM_COUNT,
+    GEOCODE_APPROXIMATE,
+    GEOCODE_NO_MATCH;
 
     @JsonValue
     public String toValue() {

@@ -67,7 +67,7 @@ public class WalkScoreAPI {
     }
 
     private void enrichOne(Apartment apt) {
-        String address = apt.getGeocodioAddress() != null ? apt.getGeocodioAddress() : apt.getAddress();
+        String address = apt.getGeocodedAddress() != null ? apt.getGeocodedAddress() : apt.getAddress();
         if (address == null) {
             address = "";
         }

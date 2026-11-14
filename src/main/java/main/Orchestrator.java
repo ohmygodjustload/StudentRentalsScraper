@@ -7,6 +7,7 @@ package main;
 
 import api.ApiConfig;
 import api.ApiException;
+import api.CensusGeocoderAPI;
 import api.CrimeDataAPI;
 import api.GeocodioAPI;
 import api.TravelTimeAPI;
@@ -21,6 +22,8 @@ import utils.CsvUtils;
 import utils.JsonUtils;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -31,18 +34,51 @@ import java.util.Scanner;
 public class Orchestrator {
 
     public static void main(String[] args) {
+        String[] effectiveArgs = args;
+        if (args == null || args.length == 0) {
+            try {
+                PipelineOptions defaults = PipelineOptions.parse(new String[0]);
+                boolean interactive = System.console() != null;
+                InteractiveMenu menu = new InteractiveMenu(
+                        new InputStreamReader(System.in, StandardCharsets.UTF_8),
+                        System.out,
+                        interactive);
+                effectiveArgs = menu.run(defaults);
+                if (effectiveArgs == null) {
+                    return;
+                }
+            } catch (IOException e) {
+                System.err.println("[ERROR] Menu failed: " + e.getMessage());
+                System.exit(1);
+                return;
+            }
+        }
+
         PipelineOptions options;
         try {
-            options = PipelineOptions.parse(args);
+            options = PipelineOptions.parse(effectiveArgs);
         } catch (IllegalArgumentException e) {
             System.err.println("[ERROR] " + e.getMessage());
-            System.err.println(PipelineOptions.helpText());
+            System.err.println();
+            System.err.println(CliHelp.overview());
             System.exit(1);
             return;
         }
 
-        if (options.isHelpRequested()) {
-            System.out.println(PipelineOptions.helpText());
+        if (options.isNoArgs()) {
+            // Should have been handled above; keep as safety net.
+            System.out.println(CliHelp.overview());
+            return;
+        }
+
+        if (options.getMode() == PipelineOptions.Mode.HELP || options.isHelpRequested()) {
+            System.out.print(CliHelp.forCommand(options.getHelpTopic()));
+            return;
+        }
+
+        if (options.getMode() == PipelineOptions.Mode.STATUS) {
+            OutputPaths paths = new OutputPaths(options.getOutputDir());
+            new StatusCommand(paths).run();
             return;
         }
 
@@ -74,7 +110,7 @@ public class Orchestrator {
                 saveCleaned(apartments, paths);
 
                 if (options.getMode() == PipelineOptions.Mode.SCRAPE_AND_CLEAN_ONLY) {
-                    System.out.println("[Orchestrator] SCRAPE_AND_CLEAN_ONLY complete.");
+                    System.out.println("[Orchestrator] scrape-clean complete.");
                     return;
                 }
             }
@@ -107,7 +143,7 @@ public class Orchestrator {
             System.out.println("[Geocoder] Geocoded data saved: " + paths.geocodedJson());
 
             if (options.getMode() == PipelineOptions.Mode.GEOCODE_ONLY) {
-                System.out.println("[Orchestrator] GEOCODE_ONLY complete.");
+                System.out.println("[Orchestrator] geocode complete.");
                 return;
             }
         }
@@ -152,28 +188,51 @@ public class Orchestrator {
 
     private static List<Apartment> geocode(
             List<Apartment> apartments, PipelineOptions options, OutputPaths paths) throws IOException {
+        PipelineOptions.GeocoderChoice choice = options.getGeocoder();
         ApiConfig geocodio = ApiConfig.load("Geocodio");
-        if (geocodio.has("api.key")) {
-            System.out.println("[Geocoder] Using Geocodio API");
-            GeocodioAPI api = new GeocodioAPI(geocodio.get("api.key").orElseThrow());
-            apartments = api.geocode(apartments);
-        } else {
-            System.out.println("[Geocoder] No Geocodio API key; waiting for manual CSV");
-            System.out.println("[Geocoder] Place geocodio.csv in: " + paths.geocodedDir());
-            System.out.println("[Geocoder] Press Enter to continue...");
-            try (Scanner sc = new Scanner(System.in)) {
-                sc.nextLine();
+        boolean hasGeocodio = geocodio.has("api.key");
+
+        if (choice == PipelineOptions.GeocoderChoice.AUTO) {
+            choice = hasGeocodio
+                    ? PipelineOptions.GeocoderChoice.GEOCODIO
+                    : PipelineOptions.GeocoderChoice.CENSUS;
+        }
+
+        switch (choice) {
+            case GEOCODIO -> {
+                if (!hasGeocodio) {
+                    throw new IOException("Geocodio selected but api.key is not configured in config/Geocodio.properties");
+                }
+                System.out.println("[Geocoder] Using Geocodio API");
+                GeocodioAPI api = new GeocodioAPI(geocodio.get("api.key").orElseThrow());
+                apartments = api.geocode(apartments);
             }
-            Path csv = paths.geocodioCsv();
-            if (!Files.isRegularFile(csv)) {
-                throw new IOException("Expected Geocodio CSV at " + csv);
+            case CENSUS -> {
+                System.out.println("[Geocoder] Using US Census Geocoder (no key required)");
+                CensusGeocoderAPI api = new CensusGeocoderAPI();
+                apartments = api.geocode(apartments);
             }
-            DataMerger merger = new DataMerger();
-            apartments = merger.mergeGeocodioData(apartments, csv.toString());
+            case CSV -> {
+                System.out.println("[Geocoder] Manual CSV mode");
+                System.out.println("[Geocoder] Place geocodio.csv in: " + paths.geocodedDir());
+                System.out.println("[Geocoder] Press Enter to continue...");
+                try (Scanner sc = new Scanner(System.in)) {
+                    sc.nextLine();
+                }
+                Path csv = paths.geocodioCsv();
+                if (!Files.isRegularFile(csv)) {
+                    throw new IOException("Expected Geocodio CSV at " + csv);
+                }
+                DataMerger merger = new DataMerger();
+                apartments = merger.mergeGeocodioData(apartments, csv.toString());
+            }
+            default -> throw new IllegalStateException("Unhandled geocoder choice: " + choice);
         }
 
         fillDistances(apartments, options.getCampusLat(), options.getCampusLng());
-        System.out.println("[Geocoder] Geocoding complete");
+        long withCoords = apartments.stream().filter(Apartment::hasCoordinates).count();
+        System.out.println("[Geocoder] Geocoding complete (" + withCoords + "/" + apartments.size()
+                + " listings have coordinates)");
         return apartments;
     }
 

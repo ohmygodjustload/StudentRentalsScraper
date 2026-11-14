@@ -11,6 +11,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -37,7 +38,7 @@ public class Apartment {
     private Double latitude;
     private Double longitude;
     private Double accuracy;
-    private String geocodioAddress;
+    private String geocodedAddress;
     private Double distanceToCampus;
 
     private Integer walkTravelTimeSeconds;
@@ -106,8 +107,10 @@ public class Apartment {
         this.accuracy = accuracy;
     }
 
-    public void setGeocodioAddress(String geocodioAddress) {
-        this.geocodioAddress = geocodioAddress;
+    @JsonProperty("geocodedAddress")
+    @JsonAlias("geocodioAddress")
+    public void setGeocodedAddress(String geocodedAddress) {
+        this.geocodedAddress = geocodedAddress;
     }
 
     public void setDistanceToCampus(Double distance) {
@@ -248,9 +251,9 @@ public class Apartment {
         return accuracy;
     }
 
-    @JsonProperty("geocodioAddress")
-    public String getGeocodioAddress() {
-        return geocodioAddress;
+    @JsonProperty("geocodedAddress")
+    public String getGeocodedAddress() {
+        return geocodedAddress;
     }
 
     @JsonProperty("distanceToCampus")

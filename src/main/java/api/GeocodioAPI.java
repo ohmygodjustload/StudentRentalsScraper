@@ -97,9 +97,9 @@ public class GeocodioAPI {
         }
         apt.setAccuracy(best.accuracy);
         if (best.formatted_address != null) {
-            apt.setGeocodioAddress(best.formatted_address);
+            apt.setGeocodedAddress(best.formatted_address);
         } else if (best.address_components != null) {
-            apt.setGeocodioAddress(best.address_components.path("formatted_street").asText(null));
+            apt.setGeocodedAddress(best.address_components.path("formatted_street").asText(null));
         }
     }
 
