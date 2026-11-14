@@ -332,6 +332,21 @@ public class Apartment {
         return bikeScoreDescription;
     }
 
+    /**
+     * Monthly rent divided by the number of people, assuming one person per bedroom
+     * (studios and fractional bedrooms count as at least one person).
+     *
+     * @return rounded dollars per person, or null if rent or bedrooms are unknown
+     */
+    @JsonProperty("pricePerPerson")
+    public Integer getPricePerPerson() {
+        if (rentMonthly == null || bedrooms == null) {
+            return null;
+        }
+        double people = Math.max(1.0, bedrooms);
+        return (int) Math.round(rentMonthly / people);
+    }
+
     public boolean hasCoordinates() {
         return latitude != null
                 && longitude != null

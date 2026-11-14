@@ -23,7 +23,7 @@ public final class CsvUtils {
 
     private static final String[] HEADER = {
             "id", "url", "landlord", "bed_bath", "bedrooms", "bathrooms",
-            "address", "price", "rentMonthly", "available", "amenities", "flags",
+            "address", "price", "rentMonthly", "pricePerPerson", "available", "amenities", "flags",
             "latitude", "longitude", "distanceToCampus",
             "walkTravelTimeSeconds", "bikeTravelTimeSeconds",
             "walkScore", "bikeScore"
@@ -44,6 +44,7 @@ public final class CsvUtils {
                         nullToEmpty(apt.getAddress()),
                         nullToEmpty(apt.getPrice()),
                         numberToString(apt.getRentMonthly()),
+                        numberToString(apt.getPricePerPerson()),
                         nullToEmpty(apt.getAvailable()),
                         nullToEmpty(apt.getAmenities()),
                         apt.getFlags().stream().map(Flag::toString).collect(Collectors.joining(";")),

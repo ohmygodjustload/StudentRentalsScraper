@@ -1,6 +1,6 @@
 # Tickets
 
-Open work items extracted from former in-code TODOs, plus future product ideas (011–018). Status values: `open`, `in_progress`, `done`.
+Open work items extracted from former in-code TODOs, plus future product ideas (011–018) and testing/infra work (019–020). Status values: `open`, `in_progress`, `done`.
 
 | ID | Title | Area | Priority | Status |
 |----|-------|------|----------|--------|
@@ -22,3 +22,5 @@ Open work items extracted from former in-code TODOs, plus future product ideas (
 | 016 | Trust, safety, and legal compliance | marketplace | low | open |
 | 017 | Monetization and La Crosse pilot | marketplace | low | open |
 | 018 | NYC affordable-but-quality apartment finder | nyc | low | open |
+| 019 | Integration testing | testing | medium | open |
+| 020 | Docker containerization | infra | low | open |

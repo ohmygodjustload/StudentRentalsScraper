@@ -67,6 +67,29 @@ class ApartmentTest {
     }
 
     @Test
+    void pricePerPerson_divides_rent_by_bedrooms() {
+        Apartment apt = new Apartment("1", "https://example.com/1");
+        assertNull(apt.getPricePerPerson());
+
+        apt.setRentMonthly(2000);
+        assertNull(apt.getPricePerPerson());
+
+        apt.setBedrooms(4.0);
+        assertEquals(500, apt.getPricePerPerson());
+
+        apt.setBedrooms(3.0);
+        assertEquals(667, apt.getPricePerPerson());
+    }
+
+    @Test
+    void pricePerPerson_treats_studio_as_one_person() {
+        Apartment apt = new Apartment("1", "https://example.com/1");
+        apt.setRentMonthly(800);
+        apt.setBedrooms(0.0);
+        assertEquals(800, apt.getPricePerPerson());
+    }
+
+    @Test
     void removeFlag_removes_only_matching_flag() {
         Apartment apt = new Apartment("1", "https://example.com/1");
         apt.addFlag(Flag.STUDIO);
