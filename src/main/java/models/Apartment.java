@@ -191,6 +191,37 @@ public class Apartment {
         }
     }
 
+    public void removeFlag(Flag flag) {
+        flags.remove(flag);
+    }
+
+    /**
+     * Clears geocode-owned fields so a re-run does not keep stale coordinates or flags.
+     */
+    public void clearGeocode() {
+        latitude = null;
+        longitude = null;
+        accuracy = null;
+        geocodedAddress = null;
+        distanceToCampus = null;
+        removeFlag(Flag.GEOCODE_APPROXIMATE);
+        removeFlag(Flag.GEOCODE_NO_MATCH);
+    }
+
+    /**
+     * Clears TravelTime / WalkScore fields so a re-run does not keep stale zeros.
+     */
+    public void clearEnrichment() {
+        walkTravelTimeSeconds = null;
+        walkTravelTimeFormatted = null;
+        bikeTravelTimeSeconds = null;
+        bikeTravelTimeFormatted = null;
+        walkScore = null;
+        walkScoreDescription = null;
+        bikeScore = null;
+        bikeScoreDescription = null;
+    }
+
     @JsonProperty("flags")
     public void setFlags(List<Flag> flags) {
         this.flags = flags == null ? new ArrayList<>() : new ArrayList<>(flags);
@@ -302,7 +333,9 @@ public class Apartment {
     }
 
     public boolean hasCoordinates() {
-        return latitude != null && longitude != null;
+        return latitude != null
+                && longitude != null
+                && !(latitude == 0.0 && longitude == 0.0);
     }
 
     private static String formatTravelTime(int seconds) {

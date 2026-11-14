@@ -136,7 +136,7 @@ public final class PipelineOptions {
         int delayMs = Integer.parseInt(defaults.getProperty("scraper.delayMs", "1000"));
         double campusLat = Double.parseDouble(defaults.getProperty("campus.lat", "43.81610373619651"));
         double campusLng = Double.parseDouble(defaults.getProperty("campus.lng", "-91.2311481387267"));
-        int travelTimeMaxSeconds = Integer.parseInt(defaults.getProperty("traveltime.maxSeconds", "900"));
+        int travelTimeMaxSeconds = Integer.parseInt(defaults.getProperty("traveltime.maxSeconds", "1800"));
         int travelTimeArrivalHour = Integer.parseInt(defaults.getProperty("traveltime.arrivalHour", "8"));
         GeocoderChoice geocoder = GeocoderChoice.AUTO;
         boolean helpRequested = false;
@@ -233,7 +233,7 @@ public final class PipelineOptions {
                 Integer.parseInt(defaults.getProperty("scraper.delayMs", "1000")),
                 Double.parseDouble(defaults.getProperty("campus.lat", "43.81610373619651")),
                 Double.parseDouble(defaults.getProperty("campus.lng", "-91.2311481387267")),
-                Integer.parseInt(defaults.getProperty("traveltime.maxSeconds", "900")),
+                Integer.parseInt(defaults.getProperty("traveltime.maxSeconds", "1800")),
                 Integer.parseInt(defaults.getProperty("traveltime.arrivalHour", "8")),
                 GeocoderChoice.AUTO,
                 false,

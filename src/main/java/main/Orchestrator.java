@@ -188,6 +188,10 @@ public class Orchestrator {
 
     private static List<Apartment> geocode(
             List<Apartment> apartments, PipelineOptions options, OutputPaths paths) throws IOException {
+        for (Apartment apt : apartments) {
+            apt.clearGeocode();
+        }
+
         PipelineOptions.GeocoderChoice choice = options.getGeocoder();
         ApiConfig geocodio = ApiConfig.load("Geocodio");
         boolean hasGeocodio = geocodio.has("api.key");
@@ -248,6 +252,9 @@ public class Orchestrator {
     private static List<Apartment> enrich(
             List<Apartment> apartments, PipelineOptions options, OutputPaths paths) {
         System.out.println("[APIs] Starting API enrichment...");
+        for (Apartment apt : apartments) {
+            apt.clearEnrichment();
+        }
 
         ApiConfig travelConfig = ApiConfig.load("TravelTime");
         if (travelConfig.hasAll("api.key", "api.id")) {

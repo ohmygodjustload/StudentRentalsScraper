@@ -41,7 +41,7 @@ mvn exec:java "-Dexec.args=help geocode"
 | `scrape-clean` | Live site | Raw + Cleaned | Default scrape path |
 | `clean` | Latest raw JSON | Cleaned | Re-run cleaner after map edits |
 | `geocode` | Latest cleaned JSON | Geocoded | Census by default |
-| `apis` | Latest geocoded JSON | API + Final | TravelTime, WalkScore, crime report |
+| `apis` | Latest geocoded JSON | API + Final | TravelTime (30 min cap), WalkScore, crime report |
 | `resume` | Latest cleaned JSON | Geocoded + API + Final | Skip re-scrape |
 | `status` | `output/` | Console only | Latest files + keys + next step |
 | `help [cmd]` | — | Console only | Overview or per-command help |
@@ -81,6 +81,8 @@ Create files under `config/` (gitignored). Environment variables override file v
 | `CrimeData.properties` | `api.key`, `api.ori` | `CRIMEDATA_API_KEY`, `CRIMEDATA_API_ORI` |
 
 Missing keys skip that stage with a warning. Census geocoding always works without keys.
+
+TravelTime reports walk/bike times only when they are within `traveltime.maxSeconds` (default 1800 = 30 minutes). Listings farther away keep those fields null.
 
 ## Typical workflows
 
@@ -123,13 +125,13 @@ In non-interactive environments (CI, piped input) it prints help instead.
 
 ## Troubleshooting
 
-| Symptom | Fix |
-|---------|-----|
-| Accidental long scrape | Use `--max-id=25` or the menu; default range is 0–900 |
-| No geocoded file | Run `.\srs.ps1 geocode` or `.\srs.ps1 resume` |
-| TravelTime / WalkScore skipped | Add keys under `config/` or set the env vars; check `.\srs.ps1 status` |
-| Want manual Geocodio CSV | `.\srs.ps1 geocode --geocoder=csv` and place `geocodio.csv` in `output/Geocoded/` |
-| Jar feels stale | Delete `target\` and run `.\srs.ps1` again; the launcher rebuilds when sources change |
+| Symptom                        | Fix                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| Accidental long scrape         | Use `--max-id=25` or the menu; default range is 0–900                                 |
+| No geocoded file               | Run `.\srs.ps1 geocode` or `.\srs.ps1 resume`                                         |
+| TravelTime / WalkScore skipped | Add keys under `config/` or set the env vars; check `.\srs.ps1 status`                |
+| Want manual Geocodio CSV       | `.\srs.ps1 geocode --geocoder=csv` and place `geocodio.csv` in `out put/Geocoded/`    |
+| Jar feels stale                | Delete `target\` and run `.\srs.ps1` again; the launcher rebuilds when sources change |
 
 ## Background
 

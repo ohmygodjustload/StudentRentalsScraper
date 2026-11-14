@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class CrimeDataAPI {
 
     private static final String BASE_URL = "https://api.usa.gov/crime/fbi/cde";
+    private static final int MONTHS_REQUESTED = 12;
 
     private final String apiKey;
     private final String ori;
@@ -49,7 +50,7 @@ public class CrimeDataAPI {
      */
     public CrimeReport fetchAndWriteReport(Path outputPath) {
         YearMonth end = YearMonth.now(ZoneId.of("America/Chicago")).minusMonths(1);
-        YearMonth start = end.minusMonths(11);
+        YearMonth start = end.minusMonths(MONTHS_REQUESTED - 1);
         String from = String.format("%02d-%d", start.getMonthValue(), start.getYear());
         String to = String.format("%02d-%d", end.getMonthValue(), end.getYear());
 
@@ -64,6 +65,14 @@ public class CrimeDataAPI {
         report.violent = violent;
         report.property = property;
         report.totals = summarizeTotals(violent, property);
+
+        Integer monthsWithData = (Integer) report.totals.get("monthsWithData");
+        if (monthsWithData != null && monthsWithData < MONTHS_REQUESTED) {
+            System.out.println("[CrimeData] Warning: only " + monthsWithData + "/"
+                    + MONTHS_REQUESTED + " months have agency data"
+                    + " (FBI reporting lag; max_data_date="
+                    + report.totals.get("maxDataDate") + ")");
+        }
 
         JsonUtils.toJson(report, outputPath.toString());
         return report;
@@ -104,43 +113,83 @@ public class CrimeDataAPI {
     }
 
     private Map<String, Object> summarizeTotals(JsonNode violent, JsonNode property) {
+        SeriesSum violentSum = sumSeries(violent);
+        SeriesSum propertySum = sumSeries(property);
+
         Map<String, Object> totals = new LinkedHashMap<>();
-        totals.put("violentActualsSum", sumActuals(violent));
-        totals.put("propertyActualsSum", sumActuals(property));
+        totals.put("violentOffenses", violentSum.offenses);
+        totals.put("violentClearances", violentSum.clearances);
+        totals.put("propertyOffenses", propertySum.offenses);
+        totals.put("propertyClearances", propertySum.clearances);
+        totals.put("monthsWithData", Math.max(violentSum.monthsWithData, propertySum.monthsWithData));
+        totals.put("monthsRequested", MONTHS_REQUESTED);
+        totals.put("maxDataDate", firstNonNull(
+                extractMaxDataDate(violent),
+                extractMaxDataDate(property)));
         return totals;
     }
 
-    private static Integer sumActuals(JsonNode root) {
+    static SeriesSum sumSeries(JsonNode root) {
+        SeriesSum sum = new SeriesSum();
         if (root == null) {
-            return null;
+            return sum;
         }
         JsonNode actuals = root.at("/offenses/actuals");
         if (actuals.isMissingNode() || !actuals.isObject()) {
-            // Some responses nest under a single offense key
-            actuals = root.path("offenses");
-            if (actuals.isObject() && actuals.size() == 1) {
-                actuals = actuals.elements().next().path("actuals");
+            return sum;
+        }
+        int offenseMonths = 0;
+        int clearanceMonths = 0;
+        for (var entry = actuals.fields(); entry.hasNext(); ) {
+            var field = entry.next();
+            String name = field.getKey().toLowerCase();
+            JsonNode months = field.getValue();
+            if (!months.isObject()) {
+                continue;
+            }
+            boolean isClearances = name.contains("clearance");
+            int seriesMonths = 0;
+            for (JsonNode monthVal : months) {
+                if (!monthVal.isNumber()) {
+                    continue;
+                }
+                int value = monthVal.asInt();
+                if (isClearances) {
+                    sum.clearances += value;
+                } else {
+                    sum.offenses += value;
+                }
+                seriesMonths++;
+            }
+            if (isClearances) {
+                clearanceMonths = Math.max(clearanceMonths, seriesMonths);
+            } else {
+                offenseMonths = Math.max(offenseMonths, seriesMonths);
             }
         }
-        if (!actuals.isObject()) {
+        sum.monthsWithData = offenseMonths > 0 ? offenseMonths : clearanceMonths;
+        return sum;
+    }
+
+    private static String extractMaxDataDate(JsonNode root) {
+        if (root == null) {
             return null;
         }
-        int sum = 0;
-        boolean any = false;
-        for (JsonNode value : actuals) {
-            if (value.isNumber()) {
-                sum += value.asInt();
-                any = true;
-            } else if (value.isObject()) {
-                for (JsonNode monthVal : value) {
-                    if (monthVal.isNumber()) {
-                        sum += monthVal.asInt();
-                        any = true;
-                    }
-                }
-            }
+        JsonNode date = root.at("/cde_properties/max_data_date/UCR");
+        if (date.isMissingNode() || date.isNull()) {
+            return null;
         }
-        return any ? sum : null;
+        return date.asText();
+    }
+
+    private static String firstNonNull(String a, String b) {
+        return a != null ? a : b;
+    }
+
+    static final class SeriesSum {
+        int offenses;
+        int clearances;
+        int monthsWithData;
     }
 
     public static class CrimeReport {

@@ -59,6 +59,31 @@ class CensusGeocoderAPITest {
         assertTrue(approx.getFlags().contains(Flag.GEOCODE_APPROXIMATE));
 
         assertNull(none.getLatitude());
+        assertNull(none.getLongitude());
+        assertTrue(none.getFlags().contains(Flag.GEOCODE_NO_MATCH));
+        assertFalse(none.hasCoordinates());
+    }
+
+    @Test
+    void parseResponse_no_match_does_not_set_coordinates_on_stale_zeros() throws Exception {
+        String body = new String(
+                getClass().getResourceAsStream("/fixtures/census_batch_response.csv").readAllBytes(),
+                StandardCharsets.UTF_8);
+
+        Apartment none = new Apartment("103", "https://example.com/103");
+        none.setLatitude(0.0);
+        none.setLongitude(0.0);
+        none.clearGeocode();
+
+        Map<String, Apartment> byId = new HashMap<>();
+        byId.put("103", none);
+
+        CensusGeocoderAPI api = new CensusGeocoderAPI();
+        api.parseResponse(body, byId);
+
+        assertNull(none.getLatitude());
+        assertNull(none.getLongitude());
+        assertFalse(none.hasCoordinates());
         assertTrue(none.getFlags().contains(Flag.GEOCODE_NO_MATCH));
     }
 
