@@ -87,6 +87,13 @@ class PipelineOptionsTest {
     }
 
     @Test
+    void score_command() {
+        PipelineOptions options = PipelineOptions.parse(new String[] {"score"});
+        assertEquals(PipelineOptions.Mode.SCORE, options.getMode());
+        assertFalse(options.getMode().isPipelineMode());
+    }
+
+    @Test
     void output_paths_html_and_audit_locations() {
         OutputPaths paths = new OutputPaths(java.nio.file.Path.of("output"), "11_14_2026_2130");
         assertEquals(java.nio.file.Path.of("output", "Html", "scrape_11_14_2026_2130"), paths.htmlDir());

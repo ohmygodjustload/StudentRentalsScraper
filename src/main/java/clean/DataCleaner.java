@@ -225,7 +225,9 @@ public class DataCleaner {
             return null;
         }
         try {
-            return Integer.parseInt(matcher.group(1).replace(",", ""));
+            int rent = Integer.parseInt(matcher.group(1).replace(",", ""));
+            // Sites show "$0" for "call for price"; treat that as unknown, not free.
+            return rent > 0 ? rent : null;
         } catch (NumberFormatException e) {
             return null;
         }

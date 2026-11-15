@@ -28,7 +28,7 @@ public final class JsonUtils {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
-        // Allow reading older scraped JSON that still contains removed fields (e.g. dealScore).
+        // Allow reading older JSON that contains fields this version no longer defines.
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         return mapper;
     }

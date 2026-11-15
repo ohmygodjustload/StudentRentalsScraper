@@ -45,6 +45,7 @@ mvn exec:java "-Dexec.args=help geocode"
 | `resume` | Latest cleaned JSON | Geocoded + API + Final | Skip re-scrape |
 | `status` | `output/` | Console only | Latest files + keys + next step |
 | `audit` | Latest raw JSON | Audit CSV | Compare bed/bath from title, field, and description (read-only) |
+| `score` | Latest Final JSON | New Final JSON + CSV | Recompute deal scores after tuning thresholds (no API calls) |
 | `help [cmd]` | — | Console only | Overview or per-command help |
 
 ## Options
@@ -158,6 +159,33 @@ id,expectedField,beds,baths,note
 - If the file is missing, there are no overrides.
 
 Only add a row after checking the listing page by hand. Descriptions and titles are evidence, not automatic truth.
+
+### Deal score
+
+Every listing gets a 0-100 `dealScore` at the end of the enrich stage (`full`, `resume`, `apis`), and `dealScoreDetail` explains the parts, for example `price 50/50, location 22/30, amenities 12/20, penalty -3`. Scores are computed from the listing data only.
+
+| Component | Points | How it scores |
+|-----------|--------|---------------|
+| Price per person | 50 | Full at $450 or less, zero at $750 or more |
+| Walk time | 15 | Full at 8 min or less, zero at 25 min or more |
+| Bike time | 5 | Full at 3 min or less, zero at 10 min or more |
+| Distance to campus | 10 | Full at 0.35 mi or less, zero at 1.5 mi or more |
+| Air conditioning | 5 | Central, wall/window unit, or yes |
+| Laundry | 5 | In-unit = 5; on-site, coin, or free = 3; hook-ups only = 0 |
+| Parking | 4 | Off-street, garage, or on-site = 4; on-street = 1 |
+| Dishwasher | 3 | Listed under Included |
+| Utilities | 3 | Heat or electric included = 3; water only = 1 |
+| Penalty | up to -15 | Missing rent or bedrooms -8, no coordinates -4, unresolved bed/bath conflict -3 |
+
+A listing beyond the TravelTime cap gets 0 travel points but no penalty. A listing with coordinates and no travel time is treated that way, too.
+
+Thresholds are the `scoring.*` keys in `src/main/resources/pipeline.properties`. Change them there, then run `score` to rescore the latest Final output without calling any API:
+
+```powershell
+.\srs.ps1 score
+```
+
+The command writes a new `output/Final/listings_final_<timestamp>.{json,csv}` and prints the score distribution and the top 10 listings. The points for each component are fixed in code. Changing them means editing `scoring/DealScorer.java`.
 
 ### Resume after an API failure
 

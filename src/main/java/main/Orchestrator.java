@@ -17,6 +17,8 @@ import clean.BedBathOverrides;
 import clean.BedBathResolver;
 import clean.DataCleaner;
 import geocoding.DataMerger;
+import scoring.DealScorer;
+import scoring.ScoringConfig;
 import geocoding.GeoUtils;
 import models.Apartment;
 import scraper.StudentRentalsScraper;
@@ -96,6 +98,16 @@ public class Orchestrator {
             return;
         }
 
+        if (options.getMode() == PipelineOptions.Mode.SCORE) {
+            try {
+                new ScoreCommand(new OutputPaths(options.getOutputDir())).run();
+            } catch (IOException | IllegalArgumentException e) {
+                System.err.println("[ERROR] Score failed: " + e.getMessage());
+                System.exit(1);
+            }
+            return;
+        }
+
         Instant start = Instant.now();
         OutputPaths paths = new OutputPaths(options.getOutputDir());
 
@@ -167,6 +179,8 @@ public class Orchestrator {
                 || options.getMode() == PipelineOptions.Mode.APIS_ONLY) {
             apartments = enrich(apartments, options, paths);
             crimeReport(paths);
+            new DealScorer(ScoringConfig.load()).score(apartments);
+            DealScorer.printSummary(apartments, System.out);
             JsonUtils.toJson(apartments, paths.finalJson().toString());
             CsvUtils.toCsv(apartments, paths.finalCsv().toString());
             System.out.println("[APIs] Final data saved: " + paths.finalJson());

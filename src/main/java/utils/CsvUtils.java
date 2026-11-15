@@ -23,10 +23,10 @@ public final class CsvUtils {
 
     private static final String[] HEADER = {
             "id", "url", "landlord", "bed_bath", "bedrooms", "bathrooms",
-            "address", "price", "rentMonthly", "pricePerPerson", "available", "amenities", "flags",
+            "address", "price", "rentMonthly", "pricePerPerson", "dealScore", "available", "amenities", "flags",
             "latitude", "longitude", "distanceToCampus",
             "walkTravelTimeSeconds", "bikeTravelTimeSeconds",
-            "walkScore", "bikeScore"
+            "walkScore", "bikeScore", "dealScoreDetail"
     };
 
     public static void toCsv(List<Apartment> listings, String filePath) {
@@ -45,6 +45,7 @@ public final class CsvUtils {
                         nullToEmpty(apt.getPrice()),
                         numberToString(apt.getRentMonthly()),
                         numberToString(apt.getPricePerPerson()),
+                        numberToString(apt.getDealScore()),
                         nullToEmpty(apt.getAvailable()),
                         nullToEmpty(apt.getAmenities()),
                         apt.getFlags().stream().map(Flag::toString).collect(Collectors.joining(";")),
@@ -54,7 +55,9 @@ public final class CsvUtils {
                         numberToString(apt.getWalkTravelTimeSeconds()),
                         numberToString(apt.getBikeTravelTimeSeconds()),
                         numberToString(apt.getWalkScore()),
-                        numberToString(apt.getBikeScore())
+                        numberToString(apt.getBikeScore()),
+                        numberToString(apt.getDealScore()),
+                        nullToEmpty(apt.getDealScoreDetail())
                 });
             }
         } catch (IOException e) {

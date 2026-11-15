@@ -28,6 +28,7 @@ public final class CliHelp {
                   resume         Geocode + enrich from the latest cleaned JSON
                   status         Show latest outputs, configured keys, and next step
                   audit          Compare bed/bath from title, Bed/Bath field, and description
+                  score          Recompute deal scores on the latest Final output (no API calls)
                   help [cmd]     This overview, or details for one command
 
                 Common options:
@@ -125,6 +126,14 @@ public final class CliHelp {
                     "None.",
                     "Seconds.",
                     ".\\srs.ps1 audit");
+            case SCORE -> detail(
+                    "score",
+                    "Recomputes the 0-100 deal score for the latest Final listings using the thresholds in pipeline.properties. No API calls, so tuning takes seconds.",
+                    "Latest output/Final/listings_final_*.json.",
+                    "A new output/Final/listings_final_<timestamp>.{json,csv} and a console summary (distribution and top 10).",
+                    "Thresholds: scoring.* keys in src/main/resources/pipeline.properties.",
+                    "Seconds.",
+                    ".\\srs.ps1 score");
             case HELP -> overview();
         };
     }

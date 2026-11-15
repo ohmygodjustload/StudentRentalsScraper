@@ -3,10 +3,12 @@ id: 001
 title: DealScorer class
 area: scoring
 priority: high
-status: open
+status: done
 ---
 
 # DealScorer class
+
+**Status: done.** Implemented in `scoring/DealScorer` with thresholds in `pipeline.properties` (`scoring.*`). Scores are written during the enrich stage, and `score` rescores the latest Final output. See the "Deal score" section of `docs/CLI.md`.
 
 ## Context
 

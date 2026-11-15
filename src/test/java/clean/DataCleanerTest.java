@@ -78,6 +78,11 @@ class DataCleanerTest {
     }
 
     @Test
+    void parseRent_zero_is_unknown_not_free() {
+        assertNull(cleaner.parseRent("$0"));
+    }
+
+    @Test
     void normalizeAddress_appends_state_without_breaking_pattern() {
         String result = cleaner.normalizeAddress("100 Main St La Crosse");
         assertTrue(result.endsWith("WI"), result);

@@ -52,6 +52,9 @@ public class Apartment {
     private Integer bikeScore;
     private String bikeScoreDescription;
 
+    private Integer dealScore;
+    private String dealScoreDetail;
+
     @JsonCreator
     public Apartment(@JsonProperty("id") String id, @JsonProperty("url") String url) {
         this.id = id;
@@ -230,6 +233,8 @@ public class Apartment {
         walkScoreDescription = null;
         bikeScore = null;
         bikeScoreDescription = null;
+        dealScore = null;
+        dealScoreDetail = null;
     }
 
     @JsonProperty("flags")
@@ -340,6 +345,32 @@ public class Apartment {
     @JsonProperty("bikeScoreDescription")
     public String getBikeScoreDescription() {
         return bikeScoreDescription;
+    }
+
+    /**
+     * @return 0-100 deal score from {@link scoring.DealScorer}, or null if not scored yet
+     */
+    @JsonProperty("dealScore")
+    public Integer getDealScore() {
+        return dealScore;
+    }
+
+    @JsonProperty("dealScore")
+    public void setDealScore(Integer dealScore) {
+        this.dealScore = dealScore;
+    }
+
+    /**
+     * @return human-readable breakdown of the deal score, such as "price 38/50, location 24/30"
+     */
+    @JsonProperty("dealScoreDetail")
+    public String getDealScoreDetail() {
+        return dealScoreDetail;
+    }
+
+    @JsonProperty("dealScoreDetail")
+    public void setDealScoreDetail(String dealScoreDetail) {
+        this.dealScoreDetail = dealScoreDetail;
     }
 
     /**

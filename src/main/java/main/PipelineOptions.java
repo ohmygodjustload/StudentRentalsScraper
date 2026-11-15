@@ -24,6 +24,7 @@ public final class PipelineOptions {
         RESUME_FROM_CLEANED("resume"),
         STATUS("status"),
         AUDIT("audit"),
+        SCORE("score"),
         HELP("help");
 
         private final String cliName;
@@ -37,7 +38,7 @@ public final class PipelineOptions {
         }
 
         public boolean isPipelineMode() {
-            return this != STATUS && this != AUDIT && this != HELP;
+            return this != STATUS && this != AUDIT && this != SCORE && this != HELP;
         }
 
         public static Mode fromCli(String value) {
@@ -49,7 +50,7 @@ public final class PipelineOptions {
             }
             throw new IllegalArgumentException(
                     "Unknown command: " + value
-                            + ". Expected one of: full, scrape-clean, clean, geocode, apis, resume, status, audit, help");
+                            + ". Expected one of: full, scrape-clean, clean, geocode, apis, resume, status, audit, score, help");
         }
     }
 
