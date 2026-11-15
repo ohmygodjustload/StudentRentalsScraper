@@ -1,0 +1,9 @@
+# Hand-verified bed/bath corrections. Applied only when the site's raw Bed/Bath field
+# still equals expectedField; otherwise the override is skipped and flagged as stale.
+# Columns: id, expectedField (raw site field, e.g. 2/1), beds (number or Studio), baths (number), note
+id,expectedField,beds,baths,note
+424,2/1,5,1,"Title says 5br and description says 'five bedrooms'; site field is one half of the duplex (312-314-316 9th St N)"
+771,4/1,5,1,"Listing is 214 14th St N; description says 212 is 4br downstairs and 214 is 5br upstairs"
+868,3/1,Studio,1,"Badger West (430 12th St N); description lists only studio floorplans (ORI Flex/Form/Edge Studio)"
+704,6/1,6,2,"Title says 6br/2ba; description says '6 LARGE bedrooms ... 2 bathrooms'"
+742,5/1.5,5,2.5,"Title says 5br/2.5ba; description says '5 Bedroom, 2.5 bath'"

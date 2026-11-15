@@ -13,6 +13,8 @@ import api.GeocodioAPI;
 import api.TravelTimeAPI;
 import api.WalkScoreAPI;
 import clean.ApartmentPostProcessor;
+import clean.BedBathOverrides;
+import clean.BedBathResolver;
 import clean.DataCleaner;
 import geocoding.DataMerger;
 import geocoding.GeoUtils;
@@ -23,12 +25,14 @@ import utils.JsonUtils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Orchestrator {
@@ -82,6 +86,16 @@ public class Orchestrator {
             return;
         }
 
+        if (options.getMode() == PipelineOptions.Mode.AUDIT) {
+            try {
+                new AuditCommand(new OutputPaths(options.getOutputDir())).run();
+            } catch (IOException e) {
+                System.err.println("[ERROR] Audit failed: " + e.getMessage());
+                System.exit(1);
+            }
+            return;
+        }
+
         Instant start = Instant.now();
         OutputPaths paths = new OutputPaths(options.getOutputDir());
 
@@ -102,7 +116,7 @@ public class Orchestrator {
 
         switch (options.getMode()) {
             case FULL_PIPELINE, SCRAPE_AND_CLEAN_ONLY -> {
-                apartments = scrape(options);
+                apartments = scrape(options, paths);
                 JsonUtils.toJson(apartments, paths.scrapedJson().toString());
                 System.out.println("[Scraper] Raw data saved: " + paths.scrapedJson());
 
@@ -160,11 +174,15 @@ public class Orchestrator {
         }
     }
 
-    private static List<Apartment> scrape(PipelineOptions options) {
+    private static List<Apartment> scrape(PipelineOptions options, OutputPaths paths) {
+        Path htmlDir = options.isSaveHtml() ? paths.htmlDir() : null;
         StudentRentalsScraper scraper = new StudentRentalsScraper(
-                options.getMinId(), options.getMaxId(), options.getDelayMs());
+                options.getMinId(), options.getMaxId(), options.getDelayMs(), htmlDir);
         List<Apartment> apartments = scraper.scrape();
         System.out.println("[Scraper] Apartments scraped: " + apartments.size());
+        if (htmlDir != null) {
+            System.out.println("[Scraper] Listing HTML saved under: " + htmlDir);
+        }
         return apartments;
     }
 
@@ -173,10 +191,23 @@ public class Orchestrator {
         apartments = postProcessor.process(apartments);
         System.out.println("[PostProcessor] Title fallbacks applied");
 
+        Map<String, BedBathOverrides.Override> overrides = loadBedBathOverrides();
+        System.out.println("[BedBath] Overrides loaded: " + overrides.size()
+                + " from " + BedBathOverrides.DEFAULT_FILE);
+        apartments = new BedBathResolver(overrides).resolve(apartments);
+
         DataCleaner cleaner = new DataCleaner();
         apartments = cleaner.clean(apartments);
         System.out.println("[Cleaner] Data cleaning complete");
         return apartments;
+    }
+
+    private static Map<String, BedBathOverrides.Override> loadBedBathOverrides() {
+        try {
+            return BedBathOverrides.load(BedBathOverrides.DEFAULT_FILE);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Could not read " + BedBathOverrides.DEFAULT_FILE, e);
+        }
     }
 
     private static void saveCleaned(List<Apartment> apartments, OutputPaths paths) {

@@ -9,6 +9,10 @@ package scraper;
 import models.Apartment;
 import models.FeatureType;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -33,16 +37,32 @@ public class StudentRentalsScraper implements ApartmentScraper {
     private final int minId;
     private final int maxId;
     private final int delayMs;
+    private final Path htmlDir;
 
     public StudentRentalsScraper(int minId, int maxId, int delayMs) {
+        this(minId, maxId, delayMs, null);
+    }
+
+    /**
+     * @param htmlDir directory for per-listing HTML snapshots, or {@code null} to skip saving HTML
+     */
+    public StudentRentalsScraper(int minId, int maxId, int delayMs, Path htmlDir) {
         this.minId = minId;
         this.maxId = maxId;
         this.delayMs = delayMs;
+        this.htmlDir = htmlDir;
     }
 
     @Override
     public List<Apartment> scrape() {
         List<Apartment> results = new ArrayList<>();
+        if (htmlDir != null) {
+            try {
+                Files.createDirectories(htmlDir);
+            } catch (IOException e) {
+                throw new IllegalStateException("Cannot create HTML snapshot directory " + htmlDir, e);
+            }
+        }
 
         for (int currentId = minId; currentId <= maxId; currentId++) {
             try {
@@ -61,11 +81,10 @@ public class StudentRentalsScraper implements ApartmentScraper {
                     continue;
                 }
 
-                Apartment apt = new Apartment(String.valueOf(currentId), url);
-                apt.setRawTitle(doc.title());
-                apt.setAddress(extractAddress(doc));
-                apt.setPrice(extractPrice(doc.body().text()));
-                extractFeatures(doc).forEach(apt::setFeature);
+                Apartment apt = parseListing(String.valueOf(currentId), url, doc);
+                if (htmlDir != null) {
+                    saveListingHtml(doc, htmlDir, apt.getId());
+                }
 
                 results.add(apt);
                 System.out.printf("[VALID] %s%n", apt);
@@ -78,6 +97,16 @@ public class StudentRentalsScraper implements ApartmentScraper {
         return results;
     }
 
+    static Apartment parseListing(String id, String url, Document doc) {
+        Apartment apt = new Apartment(id, url);
+        apt.setRawTitle(doc.title());
+        apt.setAddress(extractAddress(doc));
+        apt.setPrice(extractPrice(doc.body().text()));
+        apt.setRawDescription(extractDescription(doc));
+        extractFeatures(doc).forEach(apt::setFeature);
+        return apt;
+    }
+
     private boolean isInvalidListing(Document doc) {
         if (doc.connection().response().statusCode() == 404
                 || PLACEHOLDER_TITLE.equals(doc.title())) {
@@ -86,7 +115,7 @@ public class StudentRentalsScraper implements ApartmentScraper {
         return doc.selectFirst("div.rm_listing_features") == null;
     }
 
-    private String extractAddress(Document doc) {
+    private static String extractAddress(Document doc) {
         Element breadcrumb = doc.selectFirst("div.sp_rp_bread");
         if (breadcrumb == null) {
             return "";
@@ -98,12 +127,50 @@ public class StudentRentalsScraper implements ApartmentScraper {
         return spans.get(spans.size() - 1).text().strip();
     }
 
-    private String extractPrice(String text) {
+    private static String extractPrice(String text) {
         Matcher matcher = PRICE_PATTERN.matcher(text);
         return matcher.find() ? "$" + matcher.group(1) : "";
     }
 
-    private Map<FeatureType, String> extractFeatures(Document doc) {
+    /**
+     * Returns the free-text "Listing Information" section: everything after that heading
+     * up to the share widget or the next heading.
+     */
+    static String extractDescription(Document doc) {
+        Element listing = doc.selectFirst("div.rm_listing_item");
+        if (listing == null) {
+            return null;
+        }
+        Element heading = null;
+        for (Element h3 : listing.select("h3")) {
+            if (h3.text().strip().equalsIgnoreCase("Listing Information")) {
+                heading = h3;
+                break;
+            }
+        }
+        if (heading == null) {
+            return null;
+        }
+
+        StringBuilder text = new StringBuilder();
+        for (Element sibling = heading.nextElementSibling();
+                sibling != null;
+                sibling = sibling.nextElementSibling()) {
+            if ("sprm_share".equals(sibling.id()) || "h3".equals(sibling.tagName())) {
+                break;
+            }
+            String part = sibling.text().strip();
+            if (!part.isEmpty()) {
+                if (!text.isEmpty()) {
+                    text.append(' ');
+                }
+                text.append(part);
+            }
+        }
+        return text.isEmpty() ? null : text.toString();
+    }
+
+    private static Map<FeatureType, String> extractFeatures(Document doc) {
         Map<FeatureType, String> featureMap = new EnumMap<>(FeatureType.class);
         Elements rows = doc.select("div.rm_listing_features > div.left-listing-row");
 
@@ -120,6 +187,18 @@ public class StudentRentalsScraper implements ApartmentScraper {
             }
         }
         return featureMap;
+    }
+
+    /**
+     * Writes the listing block ({@code div.rm_listing_item}) to {@code listing_<id>.html},
+     * falling back to the whole page when that block is missing.
+     */
+    static Path saveListingHtml(Document doc, Path dir, String id) throws IOException {
+        Element listing = doc.selectFirst("div.rm_listing_item");
+        String html = listing != null ? listing.outerHtml() : doc.outerHtml();
+        Path file = dir.resolve("listing_" + id + ".html");
+        Files.writeString(file, html, StandardCharsets.UTF_8);
+        return file;
     }
 
     @Override

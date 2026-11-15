@@ -23,6 +23,7 @@ public final class PipelineOptions {
         APIS_ONLY("apis"),
         RESUME_FROM_CLEANED("resume"),
         STATUS("status"),
+        AUDIT("audit"),
         HELP("help");
 
         private final String cliName;
@@ -36,7 +37,7 @@ public final class PipelineOptions {
         }
 
         public boolean isPipelineMode() {
-            return this != STATUS && this != HELP;
+            return this != STATUS && this != AUDIT && this != HELP;
         }
 
         public static Mode fromCli(String value) {
@@ -48,7 +49,7 @@ public final class PipelineOptions {
             }
             throw new IllegalArgumentException(
                     "Unknown command: " + value
-                            + ". Expected one of: full, scrape-clean, clean, geocode, apis, resume, status, help");
+                            + ". Expected one of: full, scrape-clean, clean, geocode, apis, resume, status, audit, help");
         }
     }
 
@@ -90,6 +91,7 @@ public final class PipelineOptions {
     private final int travelTimeMaxSeconds;
     private final int travelTimeArrivalHour;
     private final GeocoderChoice geocoder;
+    private final boolean saveHtml;
     private final boolean helpRequested;
     private final boolean noArgs;
     private final String helpTopic;
@@ -105,6 +107,7 @@ public final class PipelineOptions {
             int travelTimeMaxSeconds,
             int travelTimeArrivalHour,
             GeocoderChoice geocoder,
+            boolean saveHtml,
             boolean helpRequested,
             boolean noArgs,
             String helpTopic) {
@@ -118,6 +121,7 @@ public final class PipelineOptions {
         this.travelTimeMaxSeconds = travelTimeMaxSeconds;
         this.travelTimeArrivalHour = travelTimeArrivalHour;
         this.geocoder = geocoder;
+        this.saveHtml = saveHtml;
         this.helpRequested = helpRequested;
         this.noArgs = noArgs;
         this.helpTopic = helpTopic;
@@ -139,6 +143,7 @@ public final class PipelineOptions {
         int travelTimeMaxSeconds = Integer.parseInt(defaults.getProperty("traveltime.maxSeconds", "1800"));
         int travelTimeArrivalHour = Integer.parseInt(defaults.getProperty("traveltime.arrivalHour", "8"));
         GeocoderChoice geocoder = GeocoderChoice.AUTO;
+        boolean saveHtml = false;
         boolean helpRequested = false;
         String helpTopic = null;
         boolean modeSet = false;
@@ -147,6 +152,10 @@ public final class PipelineOptions {
         for (String arg : args) {
             if ("--help".equals(arg) || "-h".equals(arg)) {
                 helpRequested = true;
+                continue;
+            }
+            if ("--save-html".equals(arg)) {
+                saveHtml = true;
                 continue;
             }
             if (!arg.startsWith("--")) {
@@ -218,6 +227,7 @@ public final class PipelineOptions {
                 travelTimeMaxSeconds,
                 travelTimeArrivalHour,
                 geocoder,
+                saveHtml,
                 helpRequested,
                 false,
                 helpTopic);
@@ -236,6 +246,7 @@ public final class PipelineOptions {
                 Integer.parseInt(defaults.getProperty("traveltime.maxSeconds", "1800")),
                 Integer.parseInt(defaults.getProperty("traveltime.arrivalHour", "8")),
                 GeocoderChoice.AUTO,
+                false,
                 false,
                 true,
                 null);
@@ -256,6 +267,7 @@ public final class PipelineOptions {
                 travelTimeMaxSeconds,
                 travelTimeArrivalHour,
                 geocoder,
+                saveHtml,
                 mode == Mode.HELP,
                 false,
                 null);
@@ -315,6 +327,10 @@ public final class PipelineOptions {
 
     public GeocoderChoice getGeocoder() {
         return geocoder;
+    }
+
+    public boolean isSaveHtml() {
+        return saveHtml;
     }
 
     public boolean isHelpRequested() {

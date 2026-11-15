@@ -19,7 +19,13 @@ public enum Flag {
     BEDBATH_UNPARSEABLE,
     UNUSUAL_BEDROOM_COUNT,
     GEOCODE_APPROXIMATE,
-    GEOCODE_NO_MATCH;
+    GEOCODE_NO_MATCH,
+    /** Title and site Bed/Bath field disagree on beds or baths. */
+    BEDBATH_CONFLICT,
+    /** A hand-verified override replaced the site Bed/Bath field. */
+    BEDBATH_OVERRIDDEN,
+    /** An override exists but the site field changed, so it was not applied. */
+    BEDBATH_OVERRIDE_STALE;
 
     @JsonValue
     public String toValue() {

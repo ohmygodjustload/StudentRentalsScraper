@@ -44,6 +44,7 @@ mvn exec:java "-Dexec.args=help geocode"
 | `apis` | Latest geocoded JSON | API + Final | TravelTime (30 min cap), WalkScore, crime report |
 | `resume` | Latest cleaned JSON | Geocoded + API + Final | Skip re-scrape |
 | `status` | `output/` | Console only | Latest files + keys + next step |
+| `audit` | Latest raw JSON | Audit CSV | Compare bed/bath from title, field, and description (read-only) |
 | `help [cmd]` | — | Console only | Overview or per-command help |
 
 ## Options
@@ -55,6 +56,7 @@ mvn exec:java "-Dexec.args=help geocode"
 | `--delay-ms=<n>` | `1000` | Delay between scrape requests |
 | `--output-dir=<path>` | `output` | Output root directory |
 | `--geocoder=<choice>` | `auto` | `auto`, `census`, `geocodio`, or `csv` |
+| `--save-html` | off | Save each listing's HTML block to `output/Html/scrape_<timestamp>/listing_<id>.html` |
 | `--mode=<mode>` | — | Legacy alias for the positional command |
 | `--help`, `-h` | — | Show overview help |
 
@@ -108,6 +110,54 @@ At the default 1000ms delay, IDs 0–900 take on the order of 15 minutes for scr
 .\srs.ps1 clean
 .\srs.ps1 resume
 ```
+
+### Data quality audit (bed/bath)
+
+The site sometimes disagrees with itself: a listing's title can say `5br/1ba` while its Bed/Bath field says `2/1`. The scraper stores the title (`rawTitle`) and the description text (`rawDescription`) in the raw and cleaned JSON so they can be compared.
+
+```powershell
+.\srs.ps1 scrape-clean --save-html   # fresh scrape, keeps listing HTML for offline re-parsing
+.\srs.ps1 audit                      # writes output/Audit/bedbath_audit_<timestamp>.csv
+```
+
+For bedrooms and bathrooms, the audit CSV shows each source's value plus two categories:
+
+- **Title vs field:** `agree`, `conflict`, `title_missing`, `field_missing`, or `both_missing`.
+- **Description:** `matches_both`, `matches_title`, `matches_field`, `matches_neither`, `matches_only_source`, `ambiguous` (several different numbers), or `missing`.
+
+The audit also compares the landlord and street address:
+
+- **Landlord:** the title text before the first separator against the site's Landlord field. Case, punctuation, and `LLC`/`Inc` are ignored, and the names agree when one contains the other.
+- **Address:** the title's street segment against the breadcrumb address, ignoring city and state. `N`/`North`, `St`/`Street`, and similar abbreviations are treated as equal.
+
+Both use the categories `agree`, `conflict`, `title_missing`, or `field_missing`. The console summary lists conflicting listing IDs for each check.
+
+The audit only reads data. It never changes listings.
+
+### Bed/bath flags and overrides
+
+During the cleaning step (`clean`, `scrape-clean`, and `full`), each listing's title and Bed/Bath field are compared. Three flags record the outcome:
+
+| Flag | Meaning |
+|------|---------|
+| `bedbath_conflict` | Title and site field disagree on beds or baths. The site field is kept unless an override applies. |
+| `bedbath_overridden` | A hand-verified override replaced the site field. The conflict flag stays so the disagreement remains visible. |
+| `bedbath_override_stale` | An override exists, but the site field no longer matches the value it was verified against. The override was skipped and a warning was printed. |
+
+Hand-verified corrections live in `data/bedbath_overrides.csv`:
+
+```csv
+id,expectedField,beds,baths,note
+424,2/1,5,1,"Title says 5br and description says 'five bedrooms'"
+868,3/1,Studio,1,"Description lists only studio floorplans"
+```
+
+- `expectedField` is the raw site field the override was checked against. The override applies only when the current raw field matches it (spaces and case are ignored).
+- `beds` is a number or `Studio`. `baths` is a number.
+- Blank lines and lines starting with `#` are ignored. A malformed row stops the run with the file name and line number.
+- If the file is missing, there are no overrides.
+
+Only add a row after checking the listing page by hand. Descriptions and titles are evidence, not automatic truth.
 
 ### Resume after an API failure
 

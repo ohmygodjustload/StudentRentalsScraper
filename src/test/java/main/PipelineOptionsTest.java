@@ -70,6 +70,30 @@ class PipelineOptionsTest {
     }
 
     @Test
+    void save_html_flag_defaults_off_and_parses_without_value() {
+        assertFalse(PipelineOptions.parse(new String[] {"scrape-clean"}).isSaveHtml());
+
+        PipelineOptions options = PipelineOptions.parse(new String[] {"scrape-clean", "--save-html", "--max-id=5"});
+        assertTrue(options.isSaveHtml());
+        assertEquals(5, options.getMaxId());
+        assertTrue(options.withCommand(PipelineOptions.Mode.FULL_PIPELINE, null, null).isSaveHtml());
+    }
+
+    @Test
+    void audit_command() {
+        PipelineOptions options = PipelineOptions.parse(new String[] {"audit"});
+        assertEquals(PipelineOptions.Mode.AUDIT, options.getMode());
+        assertFalse(options.getMode().isPipelineMode());
+    }
+
+    @Test
+    void output_paths_html_and_audit_locations() {
+        OutputPaths paths = new OutputPaths(java.nio.file.Path.of("output"), "11_14_2026_2130");
+        assertEquals(java.nio.file.Path.of("output", "Html", "scrape_11_14_2026_2130"), paths.htmlDir());
+        assertEquals("bedbath_audit_11_14_2026_2130.csv", paths.bedBathAuditCsv().getFileName().toString());
+    }
+
+    @Test
     void status_command() {
         PipelineOptions options = PipelineOptions.parse(new String[] {"status"});
         assertEquals(PipelineOptions.Mode.STATUS, options.getMode());

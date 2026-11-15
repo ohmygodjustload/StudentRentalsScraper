@@ -58,6 +58,18 @@ public final class OutputPaths {
         return root.resolve("Final");
     }
 
+    public Path htmlDir() {
+        return root.resolve("Html").resolve("scrape_" + timestamp);
+    }
+
+    public Path auditDir() {
+        return root.resolve("Audit");
+    }
+
+    public Path bedBathAuditCsv() {
+        return auditDir().resolve(uniqueFilename("bedbath_audit", "csv"));
+    }
+
     public Path scrapedJson() {
         return rawDir().resolve(uniqueFilename("listings_scraped", "json"));
     }

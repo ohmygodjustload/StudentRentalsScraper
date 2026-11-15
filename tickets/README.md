@@ -1,6 +1,6 @@
 # Tickets
 
-Open work items extracted from former in-code TODOs, plus future product ideas (011–018) and testing/infra work (019–020). Status values: `open`, `in_progress`, `done`.
+Open work items extracted from former in-code TODOs, plus future product ideas (011–018) and testing/infra/CLI/data-quality work (019–022). Status values: `open`, `in_progress`, `done`.
 
 | ID | Title | Area | Priority | Status |
 |----|-------|------|----------|--------|
@@ -24,3 +24,5 @@ Open work items extracted from former in-code TODOs, plus future product ideas (
 | 018 | NYC affordable-but-quality apartment finder | nyc | low | open |
 | 019 | Integration testing | testing | medium | open |
 | 020 | Docker containerization | infra | low | open |
+| 021 | CLI progress bar and time estimates | cli | low | open |
+| 022 | Landlord/address audit refinement and remaining bed/bath conflicts | clean | low | open |

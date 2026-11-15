@@ -27,6 +27,7 @@ public final class CliHelp {
                   apis           Enrich the latest geocoded JSON (travel, walk, crime)
                   resume         Geocode + enrich from the latest cleaned JSON
                   status         Show latest outputs, configured keys, and next step
+                  audit          Compare bed/bath from title, Bed/Bath field, and description
                   help [cmd]     This overview, or details for one command
 
                 Common options:
@@ -35,6 +36,7 @@ public final class CliHelp {
                   --delay-ms=<n>      Delay between scrape requests (default: 1000)
                   --output-dir=<path> Output root (default: output)
                   --geocoder=<choice> auto | census | geocodio | csv (default: auto)
+                  --save-html         Save each listing's HTML block to output/Html/ while scraping
                   --help, -h          Show this help
 
                 Examples:
@@ -74,7 +76,7 @@ public final class CliHelp {
                     "output/Raw/listings_scraped_*.json and output/Cleaned/listings_cleaned_*.{json,csv}.",
                     "None.",
                     "~1 second per listing ID at the default 1000ms delay.",
-                    ".\\srs.ps1 scrape-clean --min-id=0 --max-id=25 --delay-ms=200");
+                    ".\\srs.ps1 scrape-clean --min-id=0 --max-id=25 --delay-ms=200\n  .\\srs.ps1 scrape-clean --save-html");
             case CLEAN_ONLY -> detail(
                     "clean",
                     "Loads the latest raw scrape, applies title fallbacks and cleaning, and writes cleaned outputs.",
@@ -115,6 +117,14 @@ public final class CliHelp {
                     "None.",
                     "Instant.",
                     ".\\srs.ps1 status");
+            case AUDIT -> detail(
+                    "audit",
+                    "Compares bedroom and bathroom counts from the listing title, the site's Bed/Bath field, and the description text. Read-only: it does not change any listing data.",
+                    "Latest output/Raw/listings_scraped_*.json (needs a scrape made with rawDescription).",
+                    "output/Audit/bedbath_audit_*.csv and a console summary.",
+                    "None.",
+                    "Seconds.",
+                    ".\\srs.ps1 audit");
             case HELP -> overview();
         };
     }

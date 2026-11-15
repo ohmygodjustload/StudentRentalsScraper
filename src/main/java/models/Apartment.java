@@ -31,6 +31,7 @@ public class Apartment {
     private List<Flag> flags = new ArrayList<>();
 
     private String rawTitle;
+    private String rawDescription;
 
     private Double bedrooms;
     private Double bathrooms;
@@ -71,6 +72,10 @@ public class Apartment {
 
     public void setRawTitle(String rawTitle) {
         this.rawTitle = rawTitle;
+    }
+
+    public void setRawDescription(String rawDescription) {
+        this.rawDescription = rawDescription;
     }
 
     public void setBedrooms(Double bedrooms) {
@@ -173,6 +178,11 @@ public class Apartment {
     @JsonProperty("rawTitle")
     public String getRawTitle() {
         return rawTitle;
+    }
+
+    @JsonProperty("rawDescription")
+    public String getRawDescription() {
+        return rawDescription;
     }
 
     @JsonIgnore
