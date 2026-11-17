@@ -58,6 +58,7 @@ mvn exec:java "-Dexec.args=help geocode"
 | `--output-dir=<path>` | `output` | Output root directory |
 | `--geocoder=<choice>` | `auto` | `auto`, `census`, `geocodio`, or `csv` |
 | `--save-html` | off | Save each listing's HTML block to `output/Html/scrape_<timestamp>/listing_<id>.html` |
+| `--no-cache` | off | Bypass TravelTime/WalkScore cache reads (still writes fresh entries under `output/Cache/`) |
 | `--mode=<mode>` | — | Legacy alias for the positional command |
 | `--help`, `-h` | — | Show overview help |
 
@@ -86,6 +87,17 @@ Create files under `config/` (gitignored). Environment variables override file v
 Missing keys skip that stage with a warning. Census geocoding always works without keys.
 
 TravelTime reports walk/bike times only when they are within `traveltime.maxSeconds` (default 1800 = 30 minutes). Listings farther away keep those fields null.
+
+## API cache
+
+TravelTime and WalkScore responses are cached under `output/Cache/` so repeat `full` / `resume` / `apis` runs skip HTTP for listings that have not moved:
+
+| File | Key includes |
+|------|--------------|
+| `output/Cache/traveltime.json` | listing id, lat/lng, mode (walking/cycling), campus lat/lng, maxSeconds, arrivalHour |
+| `output/Cache/walkscore.json` | listing id, lat/lng |
+
+Use `--no-cache` to ignore existing entries and rewrite them from fresh API calls. Delete `output/Cache/` (or a single file) to clear the cache entirely. There is no TTL.
 
 ## Typical workflows
 

@@ -5,7 +5,7 @@ Open work items extracted from former in-code TODOs, plus future product ideas (
 | ID | Title | Area | Priority | Status |
 |----|-------|------|----------|--------|
 | 001 | DealScorer class | scoring | high | done |
-| 002 | TravelTime/WalkScore response caching | api | medium | open |
+| 002 | TravelTime/WalkScore response caching | api | medium | done |
 | 003 | Logging framework (SLF4J) | infra | medium | open |
 | 004 | SQLite/H2 persistence | storage | medium | open |
 | 005 | Change detection between scrapes | storage | medium | open |

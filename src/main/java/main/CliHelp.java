@@ -38,6 +38,7 @@ public final class CliHelp {
                   --output-dir=<path> Output root (default: output)
                   --geocoder=<choice> auto | census | geocodio | csv (default: auto)
                   --save-html         Save each listing's HTML block to output/Html/ while scraping
+                  --no-cache          Bypass TravelTime/WalkScore cache (still writes fresh entries)
                   --help, -h          Show this help
 
                 Examples:
@@ -96,12 +97,12 @@ public final class CliHelp {
                     ".\\srs.ps1 geocode\n  .\\srs.ps1 geocode --geocoder=census");
             case APIS_ONLY -> detail(
                     "apis",
-                    "Adds walk/bike travel times and Walk Scores; writes a separate FBI crime report when configured.",
+                    "Adds walk/bike travel times and Walk Scores; writes a separate FBI crime report when configured. TravelTime and WalkScore results are cached under output/Cache/ (keyed by listing id + coordinates); use --no-cache to force fresh API calls.",
                     "Latest output/Geocoded/listings_geocoded_*.json.",
-                    "output/API/* and output/Final/listings_final_*.{json,csv}.",
+                    "output/API/*, output/Cache/*, and output/Final/listings_final_*.{json,csv}.",
                     "Optional: TravelTime (api.key + api.id), WalkScore (api.key), CrimeData (api.key + api.ori).",
-                    "Depends on listing count and WalkScore rate limiting.",
-                    ".\\srs.ps1 apis");
+                    "Depends on listing count, cache hits, and WalkScore rate limiting.",
+                    ".\\srs.ps1 apis\n  .\\srs.ps1 apis --no-cache");
             case RESUME_FROM_CLEANED -> detail(
                     "resume",
                     "Geocode then enrich starting from the latest cleaned JSON (skip re-scraping).",

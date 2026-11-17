@@ -93,6 +93,7 @@ public final class PipelineOptions {
     private final int travelTimeArrivalHour;
     private final GeocoderChoice geocoder;
     private final boolean saveHtml;
+    private final boolean noCache;
     private final boolean helpRequested;
     private final boolean noArgs;
     private final String helpTopic;
@@ -109,6 +110,7 @@ public final class PipelineOptions {
             int travelTimeArrivalHour,
             GeocoderChoice geocoder,
             boolean saveHtml,
+            boolean noCache,
             boolean helpRequested,
             boolean noArgs,
             String helpTopic) {
@@ -123,6 +125,7 @@ public final class PipelineOptions {
         this.travelTimeArrivalHour = travelTimeArrivalHour;
         this.geocoder = geocoder;
         this.saveHtml = saveHtml;
+        this.noCache = noCache;
         this.helpRequested = helpRequested;
         this.noArgs = noArgs;
         this.helpTopic = helpTopic;
@@ -145,6 +148,7 @@ public final class PipelineOptions {
         int travelTimeArrivalHour = Integer.parseInt(defaults.getProperty("traveltime.arrivalHour", "8"));
         GeocoderChoice geocoder = GeocoderChoice.AUTO;
         boolean saveHtml = false;
+        boolean noCache = false;
         boolean helpRequested = false;
         String helpTopic = null;
         boolean modeSet = false;
@@ -157,6 +161,10 @@ public final class PipelineOptions {
             }
             if ("--save-html".equals(arg)) {
                 saveHtml = true;
+                continue;
+            }
+            if ("--no-cache".equals(arg)) {
+                noCache = true;
                 continue;
             }
             if (!arg.startsWith("--")) {
@@ -229,6 +237,7 @@ public final class PipelineOptions {
                 travelTimeArrivalHour,
                 geocoder,
                 saveHtml,
+                noCache,
                 helpRequested,
                 false,
                 helpTopic);
@@ -247,6 +256,7 @@ public final class PipelineOptions {
                 Integer.parseInt(defaults.getProperty("traveltime.maxSeconds", "1800")),
                 Integer.parseInt(defaults.getProperty("traveltime.arrivalHour", "8")),
                 GeocoderChoice.AUTO,
+                false,
                 false,
                 false,
                 true,
@@ -269,6 +279,7 @@ public final class PipelineOptions {
                 travelTimeArrivalHour,
                 geocoder,
                 saveHtml,
+                noCache,
                 mode == Mode.HELP,
                 false,
                 null);
@@ -332,6 +343,10 @@ public final class PipelineOptions {
 
     public boolean isSaveHtml() {
         return saveHtml;
+    }
+
+    public boolean isNoCache() {
+        return noCache;
     }
 
     public boolean isHelpRequested() {

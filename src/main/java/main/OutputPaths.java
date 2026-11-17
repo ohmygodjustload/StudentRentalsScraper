@@ -54,6 +54,10 @@ public final class OutputPaths {
         return root.resolve("API");
     }
 
+    public Path cacheDir() {
+        return root.resolve("Cache");
+    }
+
     public Path finalDir() {
         return root.resolve("Final");
     }
@@ -136,6 +140,7 @@ public final class OutputPaths {
         Files.createDirectories(cleanedDir());
         Files.createDirectories(geocodedDir());
         Files.createDirectories(apiDir());
+        Files.createDirectories(cacheDir());
         Files.createDirectories(finalDir());
     }
 }

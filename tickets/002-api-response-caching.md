@@ -3,7 +3,7 @@ id: 002
 title: TravelTime/WalkScore response caching
 area: api
 priority: medium
-status: open
+status: done
 ---
 
 # TravelTime/WalkScore response caching

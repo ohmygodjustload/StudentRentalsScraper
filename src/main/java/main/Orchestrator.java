@@ -10,6 +10,8 @@ import api.ApiException;
 import api.CensusGeocoderAPI;
 import api.CrimeDataAPI;
 import api.GeocodioAPI;
+import api.JdkHttpTransport;
+import api.ResponseCache;
 import api.TravelTimeAPI;
 import api.WalkScoreAPI;
 import clean.ApartmentPostProcessor;
@@ -301,15 +303,23 @@ public class Orchestrator {
             apt.clearEnrichment();
         }
 
+        boolean refreshCache = options.isNoCache();
+        if (refreshCache) {
+            System.out.println("[APIs] --no-cache: ignoring existing TravelTime/WalkScore cache entries");
+        }
+
         ApiConfig travelConfig = ApiConfig.load("TravelTime");
         if (travelConfig.hasAll("api.key", "api.id")) {
+            ResponseCache travelCache = ResponseCache.load(paths.cacheDir().resolve("traveltime.json"), refreshCache);
             TravelTimeAPI travelTime = new TravelTimeAPI(
                     travelConfig.get("api.key").orElseThrow(),
                     travelConfig.get("api.id").orElseThrow(),
                     options.getCampusLat(),
                     options.getCampusLng(),
                     options.getTravelTimeMaxSeconds(),
-                    options.getTravelTimeArrivalHour());
+                    options.getTravelTimeArrivalHour(),
+                    new JdkHttpTransport(),
+                    travelCache);
             try {
                 apartments = travelTime.addTravelTimes(apartments);
                 System.out.println("[APIs] Travel times added");
@@ -324,7 +334,11 @@ public class Orchestrator {
 
         ApiConfig walkConfig = ApiConfig.load("WalkScore");
         if (walkConfig.has("api.key")) {
-            WalkScoreAPI walkScore = new WalkScoreAPI(walkConfig.get("api.key").orElseThrow());
+            ResponseCache walkCache = ResponseCache.load(paths.cacheDir().resolve("walkscore.json"), refreshCache);
+            WalkScoreAPI walkScore = new WalkScoreAPI(
+                    walkConfig.get("api.key").orElseThrow(),
+                    new JdkHttpTransport(),
+                    walkCache);
             try {
                 apartments = walkScore.addWalkScores(apartments);
                 System.out.println("[APIs] Walk scores added");

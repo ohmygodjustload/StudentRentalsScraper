@@ -80,6 +80,21 @@ class PipelineOptionsTest {
     }
 
     @Test
+    void no_cache_flag_defaults_off_and_parses_without_value() {
+        assertFalse(PipelineOptions.parse(new String[] {"apis"}).isNoCache());
+
+        PipelineOptions options = PipelineOptions.parse(new String[] {"apis", "--no-cache"});
+        assertTrue(options.isNoCache());
+        assertTrue(options.withCommand(PipelineOptions.Mode.FULL_PIPELINE, null, null).isNoCache());
+    }
+
+    @Test
+    void output_paths_cache_dir() {
+        OutputPaths paths = new OutputPaths(java.nio.file.Path.of("output"), "11_14_2026_2130");
+        assertEquals(java.nio.file.Path.of("output", "Cache"), paths.cacheDir());
+    }
+
+    @Test
     void audit_command() {
         PipelineOptions options = PipelineOptions.parse(new String[] {"audit"});
         assertEquals(PipelineOptions.Mode.AUDIT, options.getMode());

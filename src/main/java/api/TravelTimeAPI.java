@@ -34,6 +34,7 @@ public class TravelTimeAPI {
     private final int maxTravelSeconds;
     private final int arrivalHour;
     private final HttpTransport transport;
+    private final ResponseCache cache;
 
     public TravelTimeAPI(
             String apiKey,
@@ -42,7 +43,8 @@ public class TravelTimeAPI {
             double campusLng,
             int maxTravelSeconds,
             int arrivalHour) {
-        this(apiKey, apiId, campusLat, campusLng, maxTravelSeconds, arrivalHour, new JdkHttpTransport());
+        this(apiKey, apiId, campusLat, campusLng, maxTravelSeconds, arrivalHour, new JdkHttpTransport(),
+                ResponseCache.disabled());
     }
 
     public TravelTimeAPI(
@@ -53,6 +55,18 @@ public class TravelTimeAPI {
             int maxTravelSeconds,
             int arrivalHour,
             HttpTransport transport) {
+        this(apiKey, apiId, campusLat, campusLng, maxTravelSeconds, arrivalHour, transport, ResponseCache.disabled());
+    }
+
+    public TravelTimeAPI(
+            String apiKey,
+            String apiId,
+            double campusLat,
+            double campusLng,
+            int maxTravelSeconds,
+            int arrivalHour,
+            HttpTransport transport,
+            ResponseCache cache) {
         this.apiKey = apiKey;
         this.apiId = apiId;
         this.campusLat = campusLat;
@@ -60,6 +74,7 @@ public class TravelTimeAPI {
         this.maxTravelSeconds = maxTravelSeconds;
         this.arrivalHour = arrivalHour;
         this.transport = transport;
+        this.cache = cache != null ? cache : ResponseCache.disabled();
     }
 
     public List<Apartment> addTravelTimes(List<Apartment> apartments) {
@@ -86,26 +101,69 @@ public class TravelTimeAPI {
             Map<String, Apartment> byId,
             String transportationType,
             boolean walking) {
-        Request request = generateRequest(geocoded, transportationType);
-        Response response = callApi(request);
-        if (response == null || response.results == null || response.results.isEmpty()) {
-            return;
+        cache.resetCounters();
+        List<Apartment> misses = new ArrayList<>();
+        for (Apartment apt : geocoded) {
+            String key = cacheKey(apt, transportationType);
+            ResponseCache.Lookup<Integer> lookup = cache.get(key, Integer.class);
+            if (lookup.hit()) {
+                applySeconds(apt, walking, lookup.value());
+            } else {
+                misses.add(apt);
+            }
         }
-        Result result = response.results.get(0);
-        if (result.locations != null) {
-            for (ResponseLocation loc : result.locations) {
-                Apartment apt = byId.get(loc.id);
-                if (apt == null || loc.properties == null || loc.properties.isEmpty()) {
-                    continue;
+
+        if (!misses.isEmpty()) {
+            Request request = generateRequest(misses, transportationType);
+            Response response = callApi(request);
+            Map<String, Integer> fetched = new HashMap<>();
+            if (response != null && response.results != null && !response.results.isEmpty()) {
+                Result result = response.results.get(0);
+                if (result.locations != null) {
+                    for (ResponseLocation loc : result.locations) {
+                        if (loc.properties != null && !loc.properties.isEmpty()) {
+                            fetched.put(loc.id, loc.properties.get(0).travel_time);
+                        }
+                    }
                 }
-                int seconds = loc.properties.get(0).travel_time;
-                if (walking) {
-                    apt.setWalkTravelTimeSeconds(seconds);
+            }
+            for (Apartment apt : misses) {
+                Integer seconds = fetched.get(apt.getId());
+                if (seconds != null) {
+                    applySeconds(apt, walking, seconds);
+                    cache.put(cacheKey(apt, transportationType), seconds);
                 } else {
-                    apt.setBikeTravelTimeSeconds(seconds);
+                    // Missing from response or listed unreachable — cache null so we don't re-query.
+                    cache.put(cacheKey(apt, transportationType), null);
                 }
             }
         }
+
+        cache.save();
+        System.out.println("[TravelTime] " + transportationType + ": "
+                + cache.hits() + " cached, " + cache.misses() + " fetched");
+    }
+
+    private void applySeconds(Apartment apt, boolean walking, Integer seconds) {
+        if (seconds == null) {
+            return;
+        }
+        if (walking) {
+            apt.setWalkTravelTimeSeconds(seconds);
+        } else {
+            apt.setBikeTravelTimeSeconds(seconds);
+        }
+    }
+
+    String cacheKey(Apartment apt, String mode) {
+        return apt.getId()
+                + "|" + ResponseCache.formatCoord(apt.getLatitude())
+                + "|" + ResponseCache.formatCoord(apt.getLongitude())
+                + "|" + mode
+                + "|" + ResponseCache.formatCoord(campusLat)
+                + "|" + ResponseCache.formatCoord(campusLng)
+                + "|" + maxTravelSeconds
+                + "|" + arrivalHour;
     }
 
     Request generateRequest(List<Apartment> apartments, String transportationType) {

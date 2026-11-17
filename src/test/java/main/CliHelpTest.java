@@ -12,6 +12,7 @@ class CliHelpTest {
         assertTrue(text.contains("full"));
         assertTrue(text.contains("status"));
         assertTrue(text.contains("--geocoder"));
+        assertTrue(text.contains("--no-cache"));
     }
 
     @Test
