@@ -1,0 +1,31 @@
+# Exact-match address fixes applied by the cleaner before generic normalization.
+# raw = the scraped address after trimming and collapsing repeated spaces.
+# corrected = the address written to cleaned output (and sent to the geocoder).
+# Quote any value that contains a comma.
+raw,corrected
+420 9th St N La Crosse,420 9th St N La Crosse WI
+128 9th St N La Crosse,128 9th St N La Crosse WI
+509 12th St N La Crosse,509 12th St N La Crosse WI
+101 West Ave N La Crosse,101 West Ave N La Crosse WI
+62410th St N La Crosse WI,624 10th St N La Crosse WI
+330 21th St N La Crosse WI,330 21st St N La Crosse WI
+821 State St #1 La Crosse WI,"821 State St, #1, La Crosse WI"
+821 State St #2 La Crosse WI,"821 State St, #2, La Crosse WI"
+821 State St #3 La Crosse WI,"821 State St, #3, La Crosse WI"
+821 State St #4 La Crosse WI,"821 State St, #4, La Crosse WI"
+1003 La Crosse St A La Crosse WI,"1003 La Crosse St, Unit A, La Crosse WI"
+1003 La Crosse St B La Crosse WI,"1003 La Crosse St, Unit B, La Crosse WI"
+509 11th St N Dwn La Crosse WI,"509 11th St N, Down, La Crosse WI"
+1118 La Crosse St Dwn La Crosse WI,"1118 La Crosse St, Down, La Crosse WI"
+1801 Cameron Ave Dwn La Crosse WI,"1801 Cameron Ave, Down, La Crosse WI"
+1915 State St Dwn La Crosse WI,"1915 State St, Down, La Crosse WI"
+1917 State St Up La Crosse WI,"1917 State St, Up, La Crosse WI"
+1308 State St Dwn La Crosse WI,"1308 State St, Down, La Crosse WI"
+1310 State St Up La Crosse WI,"1310 State St, Up, La Crosse WI"
+624 8th St S Down La Crosse WI,"624 8th St S, Down, La Crosse WI"
+624 8th St S Up La Crosse WI,"624 8th St S, Up, La Crosse WI"
+509 11th St N Up La Crosse WI,"509 11th St N, Up, La Crosse WI"
+218 11th St N-RENTED La Crosse WI,"218 11th St N, La Crosse WI"
+222 11th St N-RENTED La Crosse WI,"222 11th St N, La Crosse WI"
+230 11th St N-RENTED La Crosse WI,"230 11th St N, La Crosse WI"
+1108 Vine St-RENTED La Crosse WI,"1108 Vine St, La Crosse WI"

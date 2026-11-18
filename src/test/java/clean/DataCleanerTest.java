@@ -6,6 +6,7 @@ import models.Flag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -94,6 +95,30 @@ class DataCleanerTest {
         assertEquals("Unknown", cleaner.normalizeLandlord(null));
         assertEquals("Favre Rentals", cleaner.normalizeLandlord("Favre Rentals LLC"));
         assertEquals("Favre Rentals", cleaner.normalizeLandlord("Favre Retnals"));
+    }
+
+    @Test
+    void uses_injected_maps_without_reading_files() {
+        DataCleaner custom = new DataCleaner(
+                Map.of("Acme Rentls", "Acme Rentals"),
+                Map.of("1 Test St La Crosse", "1 Test St La Crosse WI"));
+
+        assertEquals("Acme Rentals", custom.normalizeLandlord("Acme Rentls"));
+        assertEquals("Favre Retnals", custom.normalizeLandlord("Favre Retnals"));
+        assertEquals("1 Test St La Crosse WI", custom.normalizeAddress("1 Test St La Crosse"));
+    }
+
+    @Test
+    void loadDefault_reads_data_files() throws Exception {
+        DataCleaner loaded = DataCleaner.loadDefault();
+
+        assertEquals(72, loaded.landlordAliasCount());
+        assertEquals(26, loaded.addressCorrectionCount());
+        assertEquals("Favre Rentals", loaded.normalizeLandlord("Favre Retnals"));
+        assertEquals("Off-Campus La Crosse LLC", loaded.normalizeLandlord("Off-Campus La Crosse, LLC"));
+        assertEquals("MAT Properties", loaded.normalizeLandlord("MAT Properties, LLC"));
+        assertEquals("821 State St, #1, La Crosse WI", loaded.normalizeAddress("821 State St #1 La Crosse WI"));
+        assertEquals("330 21st St N La Crosse WI", loaded.normalizeAddress("330 21th St N La Crosse WI"));
     }
 
     private void assertBedBath(String raw, String expected, double beds, double baths, Flag... flags) {

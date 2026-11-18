@@ -119,6 +119,8 @@ At the default 1000ms delay, IDs 0–900 take on the order of 15 minutes for scr
 
 ### Re-clean after editing landlord/address maps
 
+Edit `data/landlord_aliases.csv` or `data/address_corrections.csv`, then:
+
 ```powershell
 .\srs.ps1 clean
 .\srs.ps1 resume
@@ -146,6 +148,30 @@ The audit also compares the landlord and street address:
 Both use the categories `agree`, `conflict`, `title_missing`, or `field_missing`. The console summary lists conflicting listing IDs for each check.
 
 The audit only reads data. It never changes listings.
+
+### Landlord aliases and address corrections
+
+The cleaning step (`clean`, `scrape-clean`, and `full`) normalizes landlord names and fixes known bad addresses using two files in `data/`:
+
+| File | Header | Meaning |
+|------|--------|---------|
+| `data/landlord_aliases.csv` | `alias,canonical` | The site's Landlord field (exact text) and the name to write to cleaned output |
+| `data/address_corrections.csv` | `raw,corrected` | A scraped address and its replacement, applied before generic address normalization |
+
+```csv
+alias,canonical
+Favre Retnals,Favre Rentals
+"MAT Properties, LLC",MAT Properties
+```
+
+- Lookups are exact matches. Case and punctuation matter. Leading, trailing, and repeated spaces are ignored.
+- To add a landlord variant, add a row mapping the new spelling to the canonical name. If the canonical name is new, also add an identity row (`Name,Name`) so the file stays a complete list.
+- Landlord names that aren't listed pass through unchanged. Addresses that aren't listed go through the normal normalization.
+- Quote any value that contains a comma.
+- Blank lines and lines starting with `#` are ignored.
+- A missing file, a malformed row, or a duplicate key stops the run with the file name and line number.
+
+The files are read at run time, so no rebuild is needed. After editing, run `.\srs.ps1 clean` to re-clean the latest raw scrape.
 
 ### Bed/bath flags and overrides
 

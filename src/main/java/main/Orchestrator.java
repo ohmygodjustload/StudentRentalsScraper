@@ -212,7 +212,10 @@ public class Orchestrator {
                 + " from " + BedBathOverrides.DEFAULT_FILE);
         apartments = new BedBathResolver(overrides).resolve(apartments);
 
-        DataCleaner cleaner = new DataCleaner();
+        DataCleaner cleaner = loadDataCleaner();
+        System.out.println("[Cleaner] Lookups loaded: " + cleaner.landlordAliasCount()
+                + " landlord aliases from " + DataCleaner.LANDLORD_FILE + ", "
+                + cleaner.addressCorrectionCount() + " address corrections from " + DataCleaner.ADDRESS_FILE);
         apartments = cleaner.clean(apartments);
         System.out.println("[Cleaner] Data cleaning complete");
         return apartments;
@@ -223,6 +226,15 @@ public class Orchestrator {
             return BedBathOverrides.load(BedBathOverrides.DEFAULT_FILE);
         } catch (IOException e) {
             throw new UncheckedIOException("Could not read " + BedBathOverrides.DEFAULT_FILE, e);
+        }
+    }
+
+    private static DataCleaner loadDataCleaner() {
+        try {
+            return DataCleaner.loadDefault();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Could not read cleaner lookup files ("
+                    + DataCleaner.LANDLORD_FILE + ", " + DataCleaner.ADDRESS_FILE + ")", e);
         }
     }
 

@@ -3,7 +3,7 @@ id: 009
 title: Externalize landlord/address maps
 area: clean
 priority: medium
-status: open
+status: done
 ---
 
 # Externalize landlord/address maps

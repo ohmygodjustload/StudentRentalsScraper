@@ -1,0 +1,78 @@
+# Landlord name normalization used by the cleaner (clean, scrape-clean, full).
+# alias = the Landlord field exactly as the site shows it (case and punctuation matter).
+# canonical = the name written to cleaned output.
+# Keep an identity row (Name,Name) for each canonical name so this file lists every known landlord.
+# Names not listed here pass through unchanged. Quote any value that contains a comma.
+alias,canonical
+Wise Properties,Wise Properties
+Miller Properties,Miller Properties
+Parker Properties,Parker Properties
+EKIM-PT,EKIM Properties
+EKIM Properties,EKIM Properties
+"Off-Campus La Crosse, LLC",Off-Campus La Crosse LLC
+Off-Campus La Crosse Inc,Off-Campus La Crosse LLC
+Off-Campus La Crosse,Off-Campus La Crosse LLC
+Off-Campus La Crosse LLC,Off-Campus La Crosse LLC
+Benson Properties,Benson Properties
+Benson Management,Benson Properties
+JCR Properties,JCR Properties
+Favre Rentals LLC,Favre Rentals
+Favre Retnals,Favre Rentals
+Three Sixty Real Estate,Three Sixty
+Three Sixty,Three Sixty
+608 Rental Properties,608 Properties
+608 Rental Properteis,608 Properties
+608 Properties,608 Properties
+608 Properties LLC,608 Properties
+608 Rentals,608 Properties
+Wrobel Properties,Wrobel Rentals
+Wrobel Rentals,Wrobel Rentals
+Coleman Properties,Coleman Properties
+Colemen Properties,Coleman Properties
+JTH Homes LLC,JTH Homes
+RK&D Properties,RK&D Properties
+RK&D LLC1,RK&D Properties
+Dillaber Properties,Dillaber Properties
+Dillabar Properties,Dillaber Properties
+Sawyer Properties,Sawyer Properties
+Sawyer Rentals,Sawyer Properties
+Pedace,Pedace Properties
+Pedace Properties,Pedace Properties
+Gander Rentals,Gander Rentals
+Gander Rantals,Gander Rentals
+Resurrection Rentals,Resurrection Rentals
+Resurrection Properties,Resurrection Rentals
+Munson Realty,Munson Realty
+Common Ground Property,Munson Realty
+AptsLax LLC,AptsLax LLC
+Mickelson Properties,Mickelson Properties
+Clarkin Properties,Clarkin Properties
+Gerrard Properties,Gerrard Properties
+Baumgartner Properties,Baumgartner Properties
+Prairie Properties,Prairie Properties
+Cappuccio Rentals,Cappuccio Rentals
+MQuick Properties,MQuick Properties
+Biondo Properties,Biondo Properties
+Legends Living,Legends Living
+Classic Housing LLC,Classic Housing LLC
+JCH Rentals,JCH Rentals
+JAMAR Properties,JAMAR Properties
+JAMAR,JAMAR Properties
+Hilton Properties,Hilton Properties
+HNT Properties,HNT Properties
+"MAT Properties, LLC",MAT Properties
+Mack Properties,Mack Properties
+Casey Properties,Casey Properties
+Weis Rentals,Weis Rentals
+Wedgewood Commons,Wedgewood Commons
+Alkar Apartments,Alkar Apartments
+Clott Rentals,Clott Rentals
+McKeogh Properties,McKeogh Properties
+Buchner Properties,Buchner Properties
+Karbin Properties,Karbin Properties
+Hougom Properties,Hougom Properties
+DBB Properties,DBB Properties
+PK Investments,PK Investments
+Lesniewski LLC,Lesniewski LLC
+G&N Properties,G&N Properties
+Mack Highland Properties,Mack Properties

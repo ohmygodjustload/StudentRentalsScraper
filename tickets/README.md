@@ -12,7 +12,7 @@ Open work items extracted from former in-code TODOs, plus future product ideas (
 | 006 | Historical rent price data source | data | low | open |
 | 007 | Raw-vs-cleaned diff tool | tooling | low | open |
 | 008 | Optional feature normalization | clean | low | open |
-| 009 | Externalize landlord/address maps | clean | medium | open |
+| 009 | Externalize landlord/address maps | clean | medium | done |
 | 010 | Public transit commute times | api | low | open |
 | 011 | Epic: independent-landlord rental marketplace | marketplace | low | open |
 | 012 | Market validation and differentiation | marketplace | low | open |
